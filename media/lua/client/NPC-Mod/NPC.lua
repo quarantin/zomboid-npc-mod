@@ -161,7 +161,6 @@ end
 
 function NPC:save()
 	print("SAVING")
-	if true then return end
 
 	local filename = NPCUtils.getSaveDir() .. "NPC"..tostring(self.UUID);
 	self.character:getModData().actionContext_isSit = self.character:getActionStateName() == "sitonground"

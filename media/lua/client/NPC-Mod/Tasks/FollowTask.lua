@@ -41,7 +41,6 @@ function FollowTask:update()
     local actionCount = #ISTimedActionQueue.getTimedActionQueue(self.character).queue
 
     if self.followCharacter:getVehicle() == nil and self.character:getVehicle() == nil then
-
         -- If can't go - stay on place
         if self.character:getModData().NPC.lastWalkActionForceStopped then
             self.waitPos = self.followCharacter:getSquare()
@@ -64,6 +63,7 @@ function FollowTask:update()
 
         if NPCUtils.getDistanceBetween(self.followCharacter, self.character) <= 3 then
             ISTimedActionQueue.clear(self.character)
+            self.goalSquare = self.character:getSquare()
         end
 
         if self.character:getSquare() == self.goalSquare then

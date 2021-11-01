@@ -31,6 +31,9 @@ function ReputationSystem:getNPCRep(npc)
             return NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID).reputationSystem:getNPCRep(npc)
         end
     else
+        if npc.AI:getType() == "PlayerGroupAI" and self.character:getModData().NPC.AI:getType() == "PlayerGroupAI" then
+            return 1000
+        end
 
         if self.reputationList[npc.ID] == nil then
             return self.defaultReputation

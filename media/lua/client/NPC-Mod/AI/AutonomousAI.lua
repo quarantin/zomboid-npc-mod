@@ -12,6 +12,7 @@ function AutonomousAI:new(character)
 
     o.TaskArgs = {}
     o.command = ""
+    o.idleCommand = nil
 
     o.staySquare = nil
 
@@ -230,7 +231,7 @@ function AutonomousAI:UpdateInputParams()
     p.isTalkTime = 0
     if ZombRand(0, 50000) == 0 then
         p.isTalkTime = 1   
-        self.command = "TALK" 
+        self.idleCommand = "TALK" 
     end
 
     ---
@@ -356,21 +357,21 @@ function AutonomousAI:calcNPCTaskCat()
     talk.name = "Talk"
     talk.score = 0
 
-    if self.character:getModData().NPC.groupID ~= nil and self.character:getModData().NPC.AI.command ~= "TALK_COMPANION" and self.command == "TALK" then
+    if self.character:getModData().NPC.groupID ~= nil and self.character:getModData().NPC.AI.idleCommand ~= "TALK_COMPANION" and self.idleCommand == "TALK" then
         local id = self.character:getModData().NPC.groupID
         if NPCGroupManager.Groups[id].count > 1 then
             for i, n in ipairs(NPCGroupManager.Groups[id].npc) do
                 if n ~= self.character:getModData().NPC then
                     talk.score = 20
                     self.TaskArgs = n.character
-                    n.AI.command = "TALK_COMPANION"
+                    n.AI.idleCommand = "TALK_COMPANION"
                     n.AI.TaskArgs = self.character
                 end
             end
         end
     end
 
-    if self.command == "TALK_COMPANION" then
+    if self.idleCommand == "TALK_COMPANION" then
         talk.score = 20
     end
     

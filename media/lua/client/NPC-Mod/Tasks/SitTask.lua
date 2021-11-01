@@ -1,17 +1,17 @@
-SmokeTask = {}
-SmokeTask.__index = SmokeTask
+SitTask = {}
+SitTask.__index = SitTask
 
-function SmokeTask:new(character)
+function SitTask:new(character)
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self
 		
     o.mainPlayer = getPlayer()
 	o.character = character
-	o.name = "Smoke"
+	o.name = "Sit"
 	o.complete = false
 
-    character:getModData().NPC.AI.idleCommand = "SMOKE"
+    character:getModData().NPC.AI.idleCommand = "SIT"
 
     o.isStarted = false
 
@@ -19,18 +19,18 @@ function SmokeTask:new(character)
 end
 
 
-function SmokeTask:isComplete()
+function SitTask:isComplete()
 	return self.complete
 end
 
-function SmokeTask:stop()
+function SitTask:stop()
 end
 
-function SmokeTask:isValid()
+function SitTask:isValid()
     return self.character
 end
 
-function SmokeTask:update()
+function SitTask:update()
     if not self:isValid() then 
         ISTimedActionQueue.clear(self.character)
         return false 
@@ -38,15 +38,11 @@ function SmokeTask:update()
     local actionCount = #ISTimedActionQueue.getTimedActionQueue(self.character).queue
 
     if actionCount == 0 and self.isStarted == false then
-        if self.character:getInventory():getFirstTypeRecurse("Cigarettes") == nil then
-            self.character:getInventory():AddItem("Base.Cigarettes")    
+        if self.character:getActionStateName() ~= "sitonground" then
+            self.character:reportEvent("EventSitOnGround")
+            self.character:getModData().NPC:Say("I'll sit for a while", NPCColor.White)
         end
 
-        if self.character:getInventory():getFirstTypeRecurse("Lighter") == nil then
-            self.character:getInventory():AddItem("Base.Lighter")
-        end
-
-        ISTimedActionQueue.add(ISEatFoodAction:new(self.character, self.character:getInventory():getFirstTypeRecurse("Cigarettes"), 1));
         self.isStarted = true
         return true
     end

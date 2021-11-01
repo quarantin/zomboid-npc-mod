@@ -13,6 +13,8 @@ function TalkTask:new(character)
 
     o.talkCompanion = character:getModData().NPC.AI.TaskArgs
 
+    character:getModData().NPC.AI.idleCommand = "TALK"
+
     o.dialogue = NPC_Dialogues[ZombRand(1, #NPC_Dialogues+1)]
     o.dialogueCount = 1
     o.dialogueTimer = 0
@@ -58,12 +60,14 @@ function TalkTask:update()
             end
             if self.dialogueCount == #self.dialogue then
                 self.complete = true
+                self.character:getModData().NPC.AI.idleCommand = nil
+
                 if self.talkCompanion ~= getPlayer() then
-                    self.talkCompanion:getModData().NPC.AI.command = nil
+                    
                 else
                     HaloTextHelper.addTextWithArrow(self.talkCompanion, getText("IGUI_HaloNote_Boredom"), false, HaloTextHelper.getColorGreen());
                 end
-                self.character:getModData().NPC.AI.command = nil
+                
                 --
                 local val = self.talkCompanion:getBodyDamage():getBoredomLevel()
                 val = val - 20

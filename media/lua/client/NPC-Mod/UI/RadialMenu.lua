@@ -35,9 +35,12 @@ function NPCRadialMenu:showRadialMenu()
 
 	menu:addSlice("Show moodles", getTexture("media/textures/Moodle_Icon_Angry.png"), function() NPCManager.moodlesTimer = 300 end)
 
-	menu:addSlice("Settings", getTexture("media/textures/NPC_settings.png"), NPCRadialMenu.globalSettings, playerObj)
-
 	menu:addSlice("Group Tasks", nil, NPCRadialMenu.groupTasks, playerObj)
+
+	menu:addSlice("CHOOSE SECTOR", nil, function() 
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+	end)
 
     menu:addToUIManager()
 
@@ -60,53 +63,6 @@ function NPCRadialMenu.groupTasks(playerObj)
 	menu:addSlice("Set passive attack mode", getTexture("media/textures/NPC_peaceIcon.png"), NPCRadialMenu.AgressivePassiveAttackMode, npc, false, true)
 	menu:addSlice("Set aggressive attack mode", getTexture("media/textures/NPC_AgressiveIcon.png"), NPCRadialMenu.AgressivePassiveAttackMode, npc, true, true)
 
-	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
-	menu:setY(getPlayerScreenTop(playerIndex) + getPlayerScreenHeight(playerIndex) / 2 - menu:getHeight() / 2)
-	menu:addToUIManager()
-	if JoypadState.players[playerObj:getPlayerNum()+1] then
-		menu:setHideWhenButtonReleased(Joypad.DPadUp)
-		setJoypadFocus(playerObj:getPlayerNum(), menu)
-		playerObj:setJoypadIgnoreAimUntilCentered(true)
-	end
-end
-
-function NPCRadialMenu.globalSettings(playerObj)
-	local playerIndex = playerObj:getPlayerNum()
-	local menu = getPlayerRadialMenu(playerIndex)
-	menu:clear()
-
-	local settings = ModData.getOrCreate("NPCGlobalSettings")
-
-	if settings.hungerMode == nil then
-		settings.hungerMode = true
-	end
-
-	if settings.infectionMode == nil then
-		settings.infectionMode = true
-	end
-
-	if settings.unlimAmmoMode == nil then
-		settings.unlimAmmoMode = false
-	end
-
-	if settings.hungerMode then
-		menu:addSlice("Turn off hunger/thirst for NPC", nil, function() settings.hungerMode = false end)
-	else
-		menu:addSlice("Turn on hunger/thirst for NPC", nil, function() settings.hungerMode = true end)
-	end
-
-	if settings.infectionMode then
-		menu:addSlice("Turn off infection for NPC", nil, function() settings.infectionMode = false end)
-	else
-		menu:addSlice("Turn on infection for NPC", nil, function() settings.infectionMode = true end)
-	end
-
-	if settings.unlimAmmoMode then
-		menu:addSlice("Turn off unlimited ammo for NPC", nil, function() settings.unlimAmmoMode = false end)
-	else
-		menu:addSlice("Turn on unlimited ammo for NPC", nil, function() settings.unlimAmmoMode = true end)
-	end
-	
 	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
 	menu:setY(getPlayerScreenTop(playerIndex) + getPlayerScreenHeight(playerIndex) / 2 - menu:getHeight() / 2)
 	menu:addToUIManager()
@@ -441,7 +397,7 @@ end
 function NPCRadialMenu.Talk(npc)
 	npc.character:facePosition(getPlayer():getX(), getPlayer():getY())
 	
-	npc.AI.command = "TALK"
+	npc.AI.idleCommand = "TALK"
 	npc.AI.TaskArgs = getPlayer()
 end
 

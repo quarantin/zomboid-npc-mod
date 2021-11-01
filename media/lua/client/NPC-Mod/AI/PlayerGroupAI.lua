@@ -12,6 +12,7 @@ function PlayerGroupAI:new(character)
 
     o.TaskArgs = {}
     o.command = ""
+    o.idleCommand = nil
 
     o.staySquare = nil
 
@@ -205,6 +206,18 @@ function PlayerGroupAI:UpdateInputParams()
         p.isHaveAmmoToReload = 0
     end
     ---
+    if ZombRand(0,2000) == 0 then
+        p.isSmoke = true
+    elseif ZombRand(0, 5000) == 0 then
+        p.isSit = true
+    elseif ZombRand(0, 500) == 0 then
+        p.idleWalk = true
+    elseif ZombRand(0, 2000) == 0 then
+        p.talkIdle = true
+    end
+
+
+    --
     self.IP = p
 end
 
@@ -361,10 +374,41 @@ function PlayerGroupAI:calcPlayerTaskCat()
 end
 
 function PlayerGroupAI:calcCommonTaskCat()
-    if ZombRand(0,100) < 5 then
-        return --"Smoke"
+    if self.idleCommand ~= nil then
+        if self.idleCommand == "SMOKE" then
+            return "Smoke"
+        end
+    
+        if self.idleCommand == "SIT" then
+            return "Sit"
+        end
+    
+        if self.idleCommand == "IDLE_WALK" and self.character:getActionStateName() ~= "sitonground" then
+            return "IdleWalk"
+        end
+    
+        if self.idleCommand == "TALK" then
+            self.TaskArgs = getPlayer()
+            return "Talk"
+        end
+    else
+        if self.IP.isSmoke then
+            return "Smoke"
+        end
+    
+        if self.IP.isSit then
+            return "Sit"
+        end
+    
+        if self.IP.idleWalk and self.character:getActionStateName() ~= "sitonground" then
+            return "IdleWalk"
+        end
+    
+        if self.IP.talkIdle  then
+            self.TaskArgs = getPlayer()
+            return "Talk"
+        end
     end
-    --return
 end
 
 function getMaxTaskName(a, b, c, d, e, f, g)
@@ -410,6 +454,8 @@ function PlayerGroupAI:chooseTask()
     taskPoints["Talk"] = TalkTask
     
     taskPoints["Smoke"] = SmokeTask
+    taskPoints["Sit"] = SitTask
+    taskPoints["IdleWalk"] = IdleWalkTask
 
     -- Each category task have more priority than next (surrender > danger > important > ...)
     local task = nil
@@ -443,6 +489,9 @@ function PlayerGroupAI:chooseTask()
             end
         end
     end
+
+    --print("TASK ", task)
+    --print("CURRENT T ", self.TaskManager:getCurrentTaskName())
 
     if self.TaskManager:getCurrentTaskScore() <= score and task ~= nil and task ~= self.TaskManager:getCurrentTaskName() then
         ISTimedActionQueue.clear(self.character)

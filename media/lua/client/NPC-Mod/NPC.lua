@@ -33,6 +33,7 @@ function NPC:new(square, preset)
 	o.groupID = nil
 	o.isLeader = false
 	---
+
 	o:save()
 
 	return o
@@ -184,6 +185,15 @@ function NPC:save()
 end
 
 function NPC:load(UUID, x, y, z, isRevive)
+
+	if not x or not y or not z then
+		local p = getPlayer()
+		x = p:getX()
+		y = p:getY()
+		z = p:getZ()
+	end
+
+
 	local survivorDesc = SurvivorFactory.CreateSurvivor();
 	local Buddy = IsoPlayer.new(getWorld():getCell(),survivorDesc,x,y,z);
 	Buddy:getInventory():emptyIt();
@@ -269,32 +279,18 @@ function NPC:update()
 end
 
 function NPC:updateSpecialParams()
-	local settings = ModData.getOrCreate("NPCGlobalSettings")
-
-	if settings.hungerMode == nil then
-		settings.hungerMode = true
-	end
-
-	if settings.infectionMode == nil then
-		settings.infectionMode = true
-	end
-
-	if settings.unlimAmmoMode == nil then
-		settings.unlimAmmoMode = false
-	end
-
 	self.character:getStats():setFatigue(0) -- Set sleep always full
 	
-	if settings.hungerMode == false then
+	if not NPCConfig.config["NPC_NEED_FOOD"] then
 		self.character:getStats():setThirst(0.0)
 		self.character:getStats():setHunger(0.0)
 	end
 
-	if settings.infectionMode == false then
+	if not NPCConfig.config["NPC_CAN_INFECT"] then
 		self.character:getBodyDamage():setInfectionLevel(0)
 	end
 
-	if settings.unlimAmmoMode then
+	if not NPCConfig.config["NPC_NEED_AMMO"] then
 		local container = self.character:getInventory()
 		for j=1, container:getItems():size() do
 			local weapon = container:getItems():get(j-1)

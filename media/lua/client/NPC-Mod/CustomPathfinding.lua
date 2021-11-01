@@ -1,0 +1,2 @@
+CustomPathfinding = {}
+CustomPathfinding.squares = {}

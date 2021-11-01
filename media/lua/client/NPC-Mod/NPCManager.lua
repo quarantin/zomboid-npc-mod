@@ -76,7 +76,7 @@ NPCManager.hitPlayer = function(wielder, victim, weapon, damage)
                 victim:getModData().NPC.reputationSystem.reputationList[wielder:getModData().NPC.ID] = -500
             end
         end
-	end
+    end
 end
 Events.OnWeaponHitCharacter.Add(NPCManager.hitPlayer)
 
@@ -288,32 +288,6 @@ function NPCManager.SaveLoadFunc()
                 print(charID, " npc is saved ", value.npc.character:getDescriptor():getSurname())
             end
         end
-
-        if value.isLoaded == false then
-            if NPCUtils.getDistanceBetweenXYZ(value.x, value.y, getPlayer():getX(), getPlayer():getY()) < 60 and getCell():getGridSquare(value.x, value.y, 0) ~= nil then
-                for i, char in ipairs(NPCManager.characters) do
-                    if value.npc and char.UUID == value.npc.UUID then
-                        table.remove(NPCManager.characters, i)            
-                    end
-                end
-                value.npc = NPC:load(charID, value.x, value.y, value.z, false)
-                value.isLoaded = true
-                value.isSaved = false
-                print(charID, " npc is loaded ", value.npc.character:getDescriptor():getSurname())
-            end
-        end
-
-        if value.isLoaded == true and getCell():getGridSquare(value.npc.character:getX(), value.npc.character:getY(), 0) == nil then
-            value.isLoaded = false
-
-            for i, char in ipairs(NPCManager.characters) do
-                if char.UUID == value.npc.UUID then
-                    print(charID, " npc is unloaded ", value.npc.character:getDescriptor():getSurname())
-                    table.remove(NPCManager.characters, i)            
-                end
-            end
-            
-        end
     end
 end
 Events.OnTick.Add(NPCManager.SaveLoadFunc)
@@ -322,7 +296,6 @@ Events.OnTick.Add(NPCManager.SaveLoadFunc)
 function NPCManager.OnSave()
     for charID, value in pairs(NPCManager.characterMap) do
         
-        if value.isSaved == false or value.isLoaded == true then
             value.x = value.npc.character:getX()
             value.y = value.npc.character:getY()
             value.z = value.npc.character:getZ()
@@ -331,7 +304,6 @@ function NPCManager.OnSave()
             value.isSaved = true
 
             print(charID, " npc is saved")
-        end
     end
 
     NPCManager.isSaveLoadUpdateOn = false
@@ -344,3 +316,15 @@ function NPCManager.OnLoad()
     NPCManager.isSaveLoadUpdateOn = true
 end
 Events.OnLoad.Add(NPCManager.OnLoad)
+
+function NPCManager.OnGameStart()
+    local modData = getPlayer():getModData()
+    NPCManager.characterMap = modData.CharacterMap or NPCManager.characterMap
+    for charID, value in pairs(NPCManager.characterMap) do
+        value.npc = NPC:load(charID, value.x, value.y, value.z, false)
+        value.isLoaded = true
+        value.isSaved = false
+        print(charID, " npc is loaded ", value.npc.character:getDescriptor():getSurname())
+    end
+end
+Events.OnGameStart.Add(NPCManager.OnGameStart)

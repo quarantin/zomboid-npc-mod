@@ -184,6 +184,14 @@ function NPC:save()
 end
 
 function NPC:load(UUID, x, y, z, isRevive)
+
+	if not x or not y or not z then
+		p = getPlayer()
+		x = p:getX()
+		y = p:getY()
+		z = p:getZ()
+	end
+
 	local survivorDesc = SurvivorFactory.CreateSurvivor();
 	local Buddy = IsoPlayer.new(getWorld():getCell(),survivorDesc,x,y,z);
 	Buddy:getInventory():emptyIt();

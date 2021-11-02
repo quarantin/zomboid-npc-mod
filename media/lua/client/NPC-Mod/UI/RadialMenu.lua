@@ -128,7 +128,6 @@ function NPCRadialMenu.inviteToTeam(npc)
 				npc.reputationSystem.playerRep = 600
 			else
 				NPCGroupManager.Groups[npc.groupID].count = NPCGroupManager.Groups[npc.groupID].count - 1
-				print(NPCGroupManager.Groups[npc.groupID].npc)
 
 				local cc = 0
 				for ii, v in ipairs(NPCGroupManager.Groups[npc.groupID].npc) do
@@ -138,7 +137,7 @@ function NPCRadialMenu.inviteToTeam(npc)
 				end
 				table.remove(NPCGroupManager.Groups[npc.groupID].npc, cc)
 				if npc.isLeader then
-					NPCGroupManager.Groups[npc.groupID].npc[1].isLeader = true
+					NPCManager.characterMap[NPCGroupManager.Groups[npc.groupID].npc[1]].isLeader = true
 					NPCGroupManager.Groups[npc.groupID].leader = NPCGroupManager.Groups[npc.groupID].npc[1]
 				end
 

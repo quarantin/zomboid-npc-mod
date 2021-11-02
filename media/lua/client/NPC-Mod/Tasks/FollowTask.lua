@@ -1,3 +1,5 @@
+require "NPC-Mod/NPCGroupManager"
+
 FollowTask = {}
 FollowTask.__index = FollowTask
 
@@ -7,7 +9,7 @@ function FollowTask:new(character)
 	self.__index = self
 		
     if character:getModData().NPC.AI:getType() == "AutonomousAI" then
-        o.followCharacter = NPCGroupManager:getLeaderOfGroup(character:getModData().NPC.groupID).character
+        o.followCharacter = NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(character:getModData().NPC.groupID)].npc.character
     else
         o.followCharacter = getPlayer()
     end
@@ -29,7 +31,7 @@ function FollowTask:isComplete()
 end
 
 function FollowTask:isValid()
-    return self.character
+    return self.character ~= nil and self.followCharacter ~= nil
 end
 
 function FollowTask:stop()

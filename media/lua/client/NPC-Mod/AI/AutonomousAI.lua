@@ -361,11 +361,11 @@ function AutonomousAI:calcNPCTaskCat()
         local id = self.character:getModData().NPC.groupID
         if NPCGroupManager.Groups[id].count > 1 then
             for i, n in ipairs(NPCGroupManager.Groups[id].npc) do
-                if n ~= self.character:getModData().NPC then
+                if NPCManager.characterMap[n] ~= self.character:getModData().NPC then
                     talk.score = 20
-                    self.TaskArgs = n.character
-                    n.AI.idleCommand = "TALK_COMPANION"
-                    n.AI.TaskArgs = self.character
+                    self.TaskArgs = NPCManager.characterMap[n].character
+                    NPCManager.characterMap[n].AI.idleCommand = "TALK_COMPANION"
+                    NPCManager.characterMap[n].AI.TaskArgs = self.character
                 end
             end
         end

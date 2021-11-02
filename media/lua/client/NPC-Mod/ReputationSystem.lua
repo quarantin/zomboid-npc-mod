@@ -1,3 +1,5 @@
+require "NPC-Mod/NPCGroupManager"
+
 ReputationSystem = {}
 ReputationSystem.__index = ReputationSystem
 
@@ -9,8 +11,11 @@ function ReputationSystem:new(character, preset)
     o.character = character
 
     o.reputationList = {}
-    o.playerRep = preset.defaultReputation
-    o.defaultReputation = preset.defaultReputation
+    if preset ~= nil then
+        o.playerRep = preset.defaultReputation
+        o.defaultReputation = preset.defaultReputation
+    end
+    
 
     return o
 end
@@ -28,7 +33,7 @@ function ReputationSystem:getNPCRep(npc)
                 end
             end
         else
-            return NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID).reputationSystem:getNPCRep(npc)
+            return NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID)].npc.reputationSystem:getNPCRep(npc)
         end
     else
         if npc.AI:getType() == "PlayerGroupAI" and self.character:getModData().NPC.AI:getType() == "PlayerGroupAI" then
@@ -48,7 +53,7 @@ function ReputationSystem:getPlayerRep()
         if self.character:getModData().NPC.isLeader then
             return self.playerRep
         else
-            return NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID).reputationSystem:getPlayerRep()
+            return NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID)].npc.reputationSystem:getPlayerRep()
         end
     else
         if self.character:getModData().NPC.AI:getType() == "PlayerGroupAI" then

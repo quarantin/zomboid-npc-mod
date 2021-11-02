@@ -1,3 +1,5 @@
+require "NPC-Mod/NPCGroupManager"
+
 IdleWalkTask = {}
 IdleWalkTask.__index = IdleWalkTask
 
@@ -43,7 +45,7 @@ function IdleWalkTask:update()
                 self.goalSquare = NPCUtils.AdjacentFreeTileFinder_Find(getPlayer():getSquare()) 
 		        ISTimedActionQueue.add(NPCWalkToAction:new(self.character, self.goalSquare, false))
             else
-                self.goalSquare = NPCUtils.AdjacentFreeTileFinder_Find(NPCGroupManager:getLeaderOfGroup(character:getModData().NPC.groupID).character:getSquare()) 
+                self.goalSquare = NPCUtils.AdjacentFreeTileFinder_Find(NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(character:getModData().NPC.groupID)].npc.character:getSquare()) 
 		        ISTimedActionQueue.add(NPCWalkToAction:new(self.character, self.goalSquare, false))
             end
         else

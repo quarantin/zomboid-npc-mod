@@ -1,10 +1,12 @@
+require "NPC-Mod/NPCGroupManager"
+
 NPCManager = {}
 NPCManager.characters = {}
 NPCManager.vehicleSeatChoose = {}
 NPCManager.vehicleSeatChooseSquares = {}
 NPCManager.openInventoryNPC = nil
 NPCManager.moodlesTimer = 0
-NPCManager.characterMap = ModData.getOrCreate("characterMap")
+NPCManager.characterMap = nil
 NPCManager.deadNPCList = {}
 NPCManager.loadedNPC = 0
 
@@ -69,12 +71,12 @@ NPCManager.hitPlayer = function(wielder, victim, weapon, damage)
         
             if wielder == getPlayer() then
                 if victim:getModData().NPC.groupID ~= nil then
-                    NPCGroupManager:getLeaderOfGroup(victim:getModData().NPC.groupID).reputationSystem.playerRep = NPCGroupManager:getLeaderOfGroup(victim:getModData().NPC.groupID).reputationSystem.playerRep - 500
+                    NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(victim:getModData().NPC.groupID)].npc.reputationSystem.playerRep = NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(victim:getModData().NPC.groupID)].npc.reputationSystem.playerRep - 500
                 end
                 victim:getModData().NPC.reputationSystem.playerRep = victim:getModData().NPC.reputationSystem.playerRep - 500
             else
                 if victim:getModData().NPC.groupID ~= nil then
-                    NPCGroupManager:getLeaderOfGroup(victim:getModData().NPC.groupID).reputationSystem.reputationList[wielder:getModData().NPC.ID] = -500
+                    NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(victim:getModData().NPC.groupID)].npc.reputationSystem.reputationList[wielder:getModData().NPC.ID] = -500
                 end
                 victim:getModData().NPC.reputationSystem.reputationList[wielder:getModData().NPC.ID] = -500
             end
@@ -261,6 +263,9 @@ function NPCManager.LoadGrid(square)
     if square:getZ() == 0 and square:getZoneType() == "TownZone" and not square:isSolid() and square:isFree(false) and ZombRand(1200) == 0 and NPCManager.loadedNPC < NPCConfig.config["NPC_NUM"] then
         local npc = NPC:new(square, NPCPresets_GetPreset())
         npc:setAI(AutonomousAI:new(npc.character))
+
+        print("FUCK ", NPCManager.characterMap[npc.UUID])
+
         NPCManager.loadedNPC = NPCManager.loadedNPC + 1
     end
 end
@@ -331,6 +336,7 @@ function NPCManager.SaveLoadFunc()
     if NPCManager.isSaveLoadUpdateOn == false then return end
 
     for charID, value in pairs(NPCManager.characterMap) do
+        print("DICK1")
         if value.isSaved == false then
             if NPCUtils.getDistanceBetween(getPlayer(), value.npc.character) > 60 then
                 value.x = value.npc.character:getX()
@@ -342,6 +348,30 @@ function NPCManager.SaveLoadFunc()
 
                 print(charID, " npc is saved ", value.npc.character:getDescriptor():getSurname())
             end
+        end
+
+        if value.isLoaded == false then
+            if NPCUtils.getDistanceBetweenXYZ(value.x, value.y, getPlayer():getX(), getPlayer():getY()) < 60 and getCell():getGridSquare(value.x, value.y, 0) ~= nil then
+                for i, char in ipairs(NPCManager.characters) do
+                    if value.npc and char.UUID == value.npc.UUID then
+                        table.remove(NPCManager.characters, i)            
+                    end
+                end
+                value.npc = NPC:load(charID, value.x, value.y, value.z, false)
+                value.isLoaded = true
+                value.isSaved = false
+                print(charID, " npc is loaded")
+            end
+        end
+
+        if value.isLoaded == true and getCell():getGridSquare(value.npc.character:getX(), value.npc.character:getY(), 0) == nil then
+            value.isLoaded = false
+            for i, char in ipairs(NPCManager.characters) do
+                if char.UUID == value.npc.UUID then
+                    table.remove(NPCManager.characters, i)            
+                end
+            end
+            print(charID, " npc is unloaded")
         end
     end
 end
@@ -371,9 +401,6 @@ end
 Events.OnLoad.Add(NPCManager.OnLoad)
 
 function NPCManager.OnGameStart()
-    local modData = getPlayer():getModData()
-    NPCManager.characterMap = ModData.getOrCreate("characterMap")
-
     for charID, value in pairs(NPCManager.characterMap) do
         value.npc = NPC:load(charID, value.x, value.y, value.z, false)
         value.isLoaded = true
@@ -382,3 +409,11 @@ function NPCManager.OnGameStart()
     end
 end
 Events.OnGameStart.Add(NPCManager.OnGameStart)
+
+function NPCManager.LoadGlobalModData()
+    NPCManager.characterMap = ModData.getOrCreate("characterMap")
+
+    NPCGroupManager.Groups = ModData.getOrCreate("NPCGroups")
+end
+
+Events.OnInitGlobalModData.Add(NPCManager.LoadGlobalModData)

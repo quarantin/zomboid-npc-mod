@@ -1,5 +1,5 @@
 NPCGroupManager = {}
-NPCGroupManager.Groups = {}
+NPCGroupManager.Groups = nil
 
 local groupNames = {
     "The Untouchaballs",
@@ -67,7 +67,7 @@ function NPCGroupManager:meet(npc1, npc2)
         npc1.isLeader = true
         local name = groupNames[ZombRand(1, #groupNames+1)]
         local color = {r = ZombRand(0, 101)/100.0, g = ZombRand(0, 101)/100.0, b = ZombRand(0, 101)/100.0}
-        NPCGroupManager.Groups[id] = {leader = npc1, npc = {npc1, npc2}, count = 2, color = color, name = name}
+        NPCGroupManager.Groups[id] = {leader = npc1.UUID, npc = {npc1.UUID, npc2.UUID}, count = 2, color = color, name = name}
 
         npc1.userName:setGroupText(color, name)
         npc2.userName:setGroupText(color, name)
@@ -80,7 +80,7 @@ function NPCGroupManager:meet(npc1, npc2)
         npc2.groupID = npc1.groupID
 
         NPCGroupManager.Groups[npc1.groupID].count = NPCGroupManager.Groups[npc1.groupID].count + 1
-        table.insert(NPCGroupManager.Groups[npc1.groupID].npc, npc2)
+        table.insert(NPCGroupManager.Groups[npc1.groupID].npc, npc2.UUID)
 
         npc2.userName:setGroupText(NPCGroupManager.Groups[npc1.groupID].color, NPCGroupManager.Groups[npc1.groupID].name)
     end

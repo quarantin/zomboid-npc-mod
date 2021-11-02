@@ -19,7 +19,7 @@ function NPC:new(square, preset)
 	
 	-- Add npc to NPCManager
 	table.insert(NPCManager.characters, o)
-	NPCManager.characterMap[o.UUID] = { isLoaded = true, isSaved = false, npc = o }
+	NPCManager.characterMap[o.UUID] = { isLoaded = true, isSaved = false, npc = o , x = o.character:getX(), y = o.character:getY(), z = o.character:getZ() }
 	print("NEW ", o.character:getDescriptor():getSurname())
 	---
 	IsoPlayer.setCoopPVP(true)
@@ -176,10 +176,15 @@ function NPC:save()
 		self.character:getModData()["NPC"].AI.TaskManager.tasks[0] = nil
 	end
 
+	self.character:getModData()["NPC"].AI.TaskManager.tasks[0] = tempTask
+
+	self.character:getModData().defaultRep = self.character:getModData()["NPC"].reputationSystem.defaultReputation
+	self.character:getModData().playerRep = self.character:getModData()["NPC"].reputationSystem.playerRep
+	self.character:getModData().repList = self.character:getModData()["NPC"].reputationSystem.reputationList
+
 	self.character:save(filename .. "_REVIVE")
 	self.character:save(filename);
 
-	self.character:getModData()["NPC"].AI.TaskManager.tasks[0] = tempTask
 
 	self.saveTimer = 1800
 end
@@ -219,6 +224,11 @@ function NPC:load(UUID, x, y, z, isRevive)
 	o.sayDialog = NPCSayDialog:new(o.character)
 	o.hotbar = NPCHotBar:new(o.character)
 
+	o.reputationSystem = ReputationSystem:new(o.character, nil)
+	o.reputationSystem.defaultReputation = o.character:getModData().defaultRep
+	o.reputationSystem.playerRep = o.character:getModData().playerRep
+	o.reputationSystem.reputationList = o.character:getModData().repList
+
 	table.insert(NPCManager.characters, o)
 
 	self:loadAI(o)
@@ -257,12 +267,15 @@ function NPC:loadAI(o)
 	}
 
 	if o.character:getModData().NPCTaskName ~= nil then
+		print("TaskName", o.character:getModData().NPCTaskName)
 		o.AI.command = taskTable[o.character:getModData().NPCTaskName].command
 		o.AI.TaskManager:addToTop(taskTable[o.character:getModData().NPCTaskName].task:new(o.character), o.character:getModData().NPCTaskScore)
 	end
 end
 
 function NPC:update()
+	print("AAA ", self.groupID)
+
 	self.AI:update()
 
 	self.userName:update()

@@ -357,7 +357,7 @@ Events.OnGameBoot.Add(NPCConfigSettings.loadConfig)
 
 
 NPCConfig = {}
-NPCConfig.config = { ["NPC_NUM"] = 6, ["NPC_NEED_FOOD"] = true, ["NPC_NEED_AMMO"] = true, ["NPC_CAN_INFECT"] = true }
+NPCConfig.config = { ["NPC_NUM"] = 3, ["NPC_NEED_FOOD"] = true, ["NPC_NEED_AMMO"] = true, ["NPC_CAN_INFECT"] = true }
 NPCConfig.modId = "NPC-Mod" -- needs to the same as in your mod.info
 NPCConfig.name = "NPC Settings" -- the name that will be shown in the MOD tab
 NPCConfig.menu = {}

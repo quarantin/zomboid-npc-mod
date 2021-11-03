@@ -34,16 +34,6 @@ function AutonomousAI:new(character)
 	o.findItems.Melee = false
 	o.findItems.Literature = false
 
-	o.nearbyItems = {}
-	o.nearbyItems.clearWaterSource = nil
-	o.nearbyItems.tainedWaterSource = nil
-	o.nearbyItems.clearWaterSources= {}
-	o.nearbyItems.tainedWaterSources = {}
-	o.nearbyItems.containers = {}
-	o.nearbyItems.itemSquares = {}
-	o.nearbyItems.deadBodies = {}
-	o.nearbyItems.timer = 0
-
 	o.fleeFindOutsideSqTimer = 0
 	o.fleeFindOutsideSq = nil
     
@@ -248,10 +238,6 @@ function AutonomousAI:update()
         self.rareUpdateTimer = 0
         self:rareUpdate()
     end
-
-    if self.nearbyItems.timer > 0 then
-		self.nearbyItems.timer = self.nearbyItems.timer - 1
-	end
 
 	if self.fleeFindOutsideSqTimer > 0 then
         self.fleeFindOutsideSqTimer = self.fleeFindOutsideSqTimer - 1
@@ -466,8 +452,8 @@ function AutonomousAI:chooseTask()
 
     if self.TaskManager:getCurrentTaskScore() <= score and task ~= nil and task ~= self.TaskManager:getCurrentTaskName() then
         ISTimedActionQueue.clear(self.character)
-        print("CURRENT TASK ", self.TaskManager:getCurrentTaskName(), " ", self.character, " ", self.character:getX(), " ", self.character:getY())
-        print("NEW CURRENT TASK ", task, " ", self.character)
+        --print("CURRENT TASK ", self.TaskManager:getCurrentTaskName(), " ", self.character, " ", self.character:getX(), " ", self.character:getY())
+        --print("NEW CURRENT TASK ", task, " ", self.character)
         self.TaskManager:addToTop(taskPoints[task]:new(self.character), score)
     end
 end
@@ -544,88 +530,6 @@ function AutonomousAI:hitPlayer(wielder, weapon, damage)
 end
 
 
-function AutonomousAI:findNearbyItems()
-	if self.nearbyItems.timer <= 0 then
-		self.nearbyItems.timer = 200
-
-		self.nearbyItems.clearWaterSource = nil
-		self.nearbyItems.tainedWaterSource = nil
-		self.nearbyItems.clearWaterSources = {}
-		self.nearbyItems.tainedWaterSources = {}
-		self.nearbyItems.containers = {}
-		self.nearbyItems.itemSquares = {}
-		self.nearbyItems.deadBodies = {}
-
-		local distToClearWater = 999
-		local distToTainedWater = 999
-		
-		local range = 30
-		local minx = math.floor(self.character:getX() - range);
-		local maxx = math.floor(self.character:getX() + range);
-		local miny = math.floor(self.character:getY() - range);
-		local maxy = math.floor(self.character:getY() + range);
-
-		local zhigh = 0
-		if self.character:getZ() > 0 then
-			zhigh = self.character:getZ() - 1
-		end
-
-		for z=zhigh, zhigh+2 do
-			for x=minx, maxx do
-				for y=miny, maxy do
-					local sq = getSquare(x,y,z);
-					if sq ~= nil and NPCUtils:inSafeZone(sq) then
-						local tempDistance = NPCUtils.getDistanceBetween(sq, self.character)
-						if (self.character:getZ() ~= z) then tempDistance = tempDistance + 30 end
-
-						local items = sq:getObjects()
-						for j=0, items:size()-1 do
-							local item = items:get(j)
-							if item:hasWater() then
-								if not item:isTaintedWater() then
-									if tempDistance < distToClearWater then
-										distToClearWater = tempDistance
-										self.nearbyItems.clearWaterSource = item
-									end
-									table.insert(self.nearbyItems.clearWaterSources, item)
-								else
-									if tempDistance < distToTainedWater then
-										distToTainedWater = tempDistance
-										self.nearbyItems.tainedWaterSource = item
-									end
-									table.insert(self.nearbyItems.tainedWaterSources, item)
-								end
-							end
-
-							for containerIndex = 1, item:getContainerCount() do
-								local container = item:getContainerByIndex(containerIndex-1)
-								table.insert(self.nearbyItems.containers, container)
-							end
-						end	
-
-						items = sq:getWorldObjects()
-						for j=0, items:size()-1 do
-							if(items:get(j):getItem()) then
-								table.insert(self.nearbyItems.itemSquares, sq)
-								break
-							end
-						end	
-
-						items = sq:getDeadBodys()
-						for j=0, items:size()-1 do
-							if(items:get(j):getContainer():getItems():size() > 0) then
-								table.insert(self.nearbyItems.deadBodies, items:get(j))
-								break
-							end
-						end	
-					end
-				end						
-			end
-		end
-	end
-end
-
-
 -----------------------
 -----------------------
 
@@ -660,10 +564,10 @@ end
 
 function AutonomousAI:calcFindItemCategories()
     self.findItems.Food = true
-	self.findItems.Weapon = false
+	self.findItems.Weapon = true
 	self.findItems.Clothing = false
-	self.findItems.Meds = false
-	self.findItems.Bags = false
-	self.findItems.Melee = false
+	self.findItems.Meds = true
+	self.findItems.Bags = true
+	self.findItems.Melee = true
 	self.findItems.Literature = false
 end

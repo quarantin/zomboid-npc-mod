@@ -40,7 +40,7 @@ function NPCWalkToAction:update()
         print("NPCWA - path finding fail")
         self.character:getModData().NPC.lastWalkActionFailed = true
 
-        self.character:getModData().NPC.walkToDelay = 40
+        self.character:getModData().NPC.walkToDelay = 0
 
         local vec = self.character:getForwardDirection()
         local forwardSq = getCell():getGridSquare(self.character:getX() + vec:getX()*0.5, self.character:getY() + vec:getY()*0.5, self.character:getZ())

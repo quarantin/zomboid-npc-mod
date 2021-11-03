@@ -1,5 +1,16 @@
 NPCGroupManager = {}
 NPCGroupManager.Groups = nil
+NPCGroupManager.playerBase = nil
+NPCGroupManager.dropLoot = nil
+
+function NPCGroupManager:isAtBase(x, y)
+    if NPCGroupManager.playerBase.x1 ~= nil then
+        if x >= NPCGroupManager.playerBase.x1 and x <= NPCGroupManager.playerBase.x2 and y >= NPCGroupManager.playerBase.y1 and y <= NPCGroupManager.playerBase.y2 then
+            return true
+        end
+    end
+    return false
+end
 
 local groupNames = {
     "The Untouchaballs",

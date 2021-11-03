@@ -43,7 +43,6 @@ function EatDrinkTask:update()
             ISTimedActionQueue.add(ISEatDrinkAction:new(self.character, food, 1))
         else
             --print("C")
-            self.character:getModData()["NPC"].AI:findNearbyItems()
             local foods, foodSquares = self.character:getModData()["NPC"]:getItemsSquareInNearbyItems(function(item)
                 if item:getCategory() == "Food" then
                     return true
@@ -101,20 +100,21 @@ function EatDrinkTask:update()
         if water then
             ISInventoryPaneContextMenu.transferIfNeeded(self.character, water)
         else
-            self.character:getModData()["NPC"].AI:findNearbyItems()
-            if self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSource and self.character:getModData()["NPC"]:isOkDist(self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSource) then
-                ISTimedActionQueue.add(NPCWalkToAction:new(self.character, NPCUtils.getNearestFreeSquare(self.character, self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSource:getSquare(), NPCUtils.isInRoom(self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSource:getSquare())), false))
-                local waterAvailable = self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSource:getWaterAmount()
+            local waterSource = self:getNearestWaterSource()
+
+            if waterSource and self.character:getModData()["NPC"]:isOkDist(waterSource) then
+                ISTimedActionQueue.add(NPCWalkToAction:new(self.character, NPCUtils.getNearestFreeSquare(self.character, waterSource:getSquare(), NPCUtils.isInRoom(waterSource:getSquare())), false))
+                local waterAvailable = waterSource:getWaterAmount()
                 local thirst = self.character:getStats():getThirst()
                 local waterNeeded = math.floor((thirst + 0.005) / 0.1)
                 local waterConsumed = math.min(waterNeeded, waterAvailable)
-                ISTimedActionQueue.add(ISTakeWaterAction:new(self.character, nil, waterConsumed, self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSource, (waterConsumed * 10) + 15, nil));
+                ISTimedActionQueue.add(ISTakeWaterAction:new(self.character, nil, waterConsumed, waterSource, (waterConsumed * 10) + 15, nil));
 
                 local emptyWaterContainer = self:getEmptyWaterContainer()
 
                 if emptyWaterContainer then
                     ISInventoryPaneContextMenu.transferIfNeeded(self.character, emptyWaterContainer)
-                    self:fillEmptyItemWithWater(emptyWaterContainer, self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSource)
+                    self:fillEmptyItemWithWater(emptyWaterContainer, waterSource)
                 end
             else
                 local waterItem, waterItemSq = self.character:getModData()["NPC"]:getNearestItemSquareInNearbyItems(function(item)
@@ -218,4 +218,18 @@ function EatDrinkTask:fillEmptyItemWithWater(item, waterObject)
     if returnToContainer and (returnToContainer ~= self.character:getInventory()) then
         ISTimedActionQueue.add(ISInventoryTransferAction:new(self.character, item, self.character:getInventory(), returnToContainer))
     end
+end
+
+function EatDrinkTask:getNearestWaterSource()
+    local dist = 999
+    local sourceRes = nil
+
+    for i, source in ipairs(ScanSquaresSystem.nearbyItems.clearWaterSources) do
+        local d = NPCUtils.getDistanceBetween(source:getSquare(), self.character)
+        if d < dist then
+            dist = d
+            sourceRes = source
+        end
+    end
+    return sourceRes
 end

@@ -34,18 +34,10 @@ function PlayerGroupAI:new(character)
 	o.findItems.Melee = false
 	o.findItems.Literature = false
 
-	o.nearbyItems = {}
-	o.nearbyItems.clearWaterSource = nil
-	o.nearbyItems.tainedWaterSource = nil
-	o.nearbyItems.clearWaterSources= {}
-	o.nearbyItems.tainedWaterSources = {}
-	o.nearbyItems.containers = {}
-	o.nearbyItems.itemSquares = {}
-	o.nearbyItems.deadBodies = {}
-	o.nearbyItems.timer = 0
-
 	o.fleeFindOutsideSqTimer = 0
 	o.fleeFindOutsideSq = nil
+
+    o.isAtBase = false
     
     return o
 end
@@ -232,10 +224,6 @@ function PlayerGroupAI:update()
         self:rareUpdate()
     end
 
-    if self.nearbyItems.timer > 0 then
-		self.nearbyItems.timer = self.nearbyItems.timer - 1
-	end
-
 	if self.fleeFindOutsideSqTimer > 0 then
         self.fleeFindOutsideSqTimer = self.fleeFindOutsideSqTimer - 1
     end
@@ -243,6 +231,19 @@ function PlayerGroupAI:update()
     self:UpdateInputParams()
     self:chooseTask()
     self.TaskManager:update()
+
+
+    local isAtBase = NPCGroupManager:isAtBase(self.character:getX(), self.character:getY())
+    if isAtBase then
+        if self.isAtBase == false then
+            if ZombRand(0, 10) == 0 then
+                self.character:getModData().NPC:Say("HOME SWEET HOME", NPCColor.White)    
+            end
+        end
+        self.isAtBase = true
+    else
+        self.isAtBase = false
+    end    
 end
 
 function PlayerGroupAI:rareUpdate()
@@ -363,6 +364,13 @@ function PlayerGroupAI:calcPlayerTaskCat()
         attach.score = 1
     end
 
+    local dropLoot = {}
+    dropLoot.name = "DropLoot"
+    dropLoot.score = 0
+    if self.command == "DROP_LOOT" then
+        dropLoot.score = 1
+    end
+
     local talk = {}
     talk.name = "Talk"
     talk.score = 0
@@ -370,7 +378,7 @@ function PlayerGroupAI:calcPlayerTaskCat()
         talk.score = 1
     end
 
-    return getMaxTaskName(follow, stay, patrol, find_items, wash, attach, talk)
+    return getMaxTaskName(follow, stay, patrol, find_items, wash, attach, talk, dropLoot)
 end
 
 function PlayerGroupAI:calcCommonTaskCat()
@@ -411,8 +419,8 @@ function PlayerGroupAI:calcCommonTaskCat()
     end
 end
 
-function getMaxTaskName(a, b, c, d, e, f, g)
-    local t = {a, b, c, d, e, f, g}
+function getMaxTaskName(a, b, c, d, e, f, g, i, j, k, l, m)
+    local t = {a, b, c, d, e, f, g, i, j, k, l, m}
     local task
     local max = 0
     for i, v in ipairs(t) do
@@ -452,10 +460,12 @@ function PlayerGroupAI:chooseTask()
     taskPoints["AttachItem"] = AttachItemTask
     taskPoints["StepBack"] = StepBackTask
     taskPoints["Talk"] = TalkTask
-    
+    taskPoints["DropLoot"] = DropLootTask
+
     taskPoints["Smoke"] = SmokeTask
     taskPoints["Sit"] = SitTask
     taskPoints["IdleWalk"] = IdleWalkTask
+
 
     -- Each category task have more priority than next (surrender > danger > important > ...)
     local task = nil
@@ -570,89 +580,6 @@ function PlayerGroupAI:hitPlayer(wielder, weapon, damage)
 
     bodydamage:Update();
 end
-
-
-function PlayerGroupAI:findNearbyItems()
-	if self.nearbyItems.timer <= 0 then
-		self.nearbyItems.timer = 1000
-
-		self.nearbyItems.clearWaterSource = nil
-		self.nearbyItems.tainedWaterSource = nil
-		self.nearbyItems.clearWaterSources = {}
-		self.nearbyItems.tainedWaterSources = {}
-		self.nearbyItems.containers = {}
-		self.nearbyItems.itemSquares = {}
-		self.nearbyItems.deadBodies = {}
-
-		local distToClearWater = 999
-		local distToTainedWater = 999
-		
-		local range = 30
-		local minx = math.floor(self.character:getX() - range);
-		local maxx = math.floor(self.character:getX() + range);
-		local miny = math.floor(self.character:getY() - range);
-		local maxy = math.floor(self.character:getY() + range);
-
-		local zhigh = 0
-		if self.character:getZ() > 0 then
-			zhigh = self.character:getZ() - 1
-		end
-
-		for z=zhigh, zhigh+2 do
-			for x=minx, maxx do
-				for y=miny, maxy do
-					local sq = getSquare(x,y,z);
-					if sq ~= nil and NPCUtils:inSafeZone(sq) then
-						local tempDistance = NPCUtils.getDistanceBetween(sq, self.character)
-						if (self.character:getZ() ~= z) then tempDistance = tempDistance + 30 end
-
-						local items = sq:getObjects()
-						for j=0, items:size()-1 do
-							local item = items:get(j)
-							if item:hasWater() then
-								if not item:isTaintedWater() then
-									if tempDistance < distToClearWater then
-										distToClearWater = tempDistance
-										self.nearbyItems.clearWaterSource = item
-									end
-									table.insert(self.nearbyItems.clearWaterSources, item)
-								else
-									if tempDistance < distToTainedWater then
-										distToTainedWater = tempDistance
-										self.nearbyItems.tainedWaterSource = item
-									end
-									table.insert(self.nearbyItems.tainedWaterSources, item)
-								end
-							end
-
-							for containerIndex = 1, item:getContainerCount() do
-								local container = item:getContainerByIndex(containerIndex-1)
-								table.insert(self.nearbyItems.containers, container)
-							end
-						end	
-
-						items = sq:getWorldObjects()
-						for j=0, items:size()-1 do
-							if(items:get(j):getItem()) then
-								table.insert(self.nearbyItems.itemSquares, sq)
-								break
-							end
-						end	
-
-						items = sq:getDeadBodys()
-						for j=0, items:size()-1 do
-							if(items:get(j):getContainer():getItems():size() > 0) then
-								table.insert(self.nearbyItems.deadBodies, items:get(j))
-								break
-							end
-						end	
-					end
-				end						
-			end
-		end
-	end
-end
-
 
 -----------------------
 -----------------------

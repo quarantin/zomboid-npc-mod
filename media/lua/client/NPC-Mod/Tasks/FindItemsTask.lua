@@ -11,74 +11,72 @@ function FindItemsTask:new(character)
 	o.name = "FindItems"
 	o.complete = false
 
+    o.updateItemLocationTimer = 0
+
     o:updateItemLocation()
+
 	return o
 end
 
 function FindItemsTask:updateItemLocation()
-    self.character:getModData()["NPC"].AI:findNearbyItems()
+    if self.updateItemLocationTimer <= 0 then
+        self.updateItemLocationTimer = 120
+        self.itemSquares, self.squaresCount = self.character:getModData()["NPC"]:getItemsSquareInNearbyItems(function(item)
+            if self.character:getModData()["NPC"].AI.findItems.Food and NPCUtils:evalIsFood(item) then
+                return true
+            end          
+        
+            if self.character:getModData()["NPC"].AI.findItems.Weapon and NPCUtils:evalIsWeapon(item) then
+                return true
+            end  
+        
+            if self.character:getModData()["NPC"].AI.findItems.Clothing and NPCUtils:evalIsClothing(item) then
+                return true
+            end  
+        
+            if self.character:getModData()["NPC"].AI.findItems.Meds and NPCUtils:evalIsMeds(item) then
+                return true
+            end  
+        
+            if self.character:getModData()["NPC"].AI.findItems.Bags and NPCUtils:evalIsBags(item) then
+                return true
+            end  
+        
+            if self.character:getModData()["NPC"].AI.findItems.Melee and NPCUtils:evalIsMelee(item) then
+                return true
+            end  
+        
+            if self.character:getModData()["NPC"].AI.findItems.Literature and NPCUtils:evalIsLiterature(item) then
+                return true
+            end  
+        
+            return false
+        end)
+    
+        self.sqPath = {}
+        table.insert(self.sqPath, self.character:getSquare())
+        self.sqPathCount = 1
 
-    self.itemSquares, self.squaresCount = self.character:getModData()["NPC"]:getItemsSquareInNearbyItems(function(item)
-        if self.character:getModData()["NPC"].AI.findItems.Food and NPCUtils:evalIsFood(item) then
-            return true
-        end          
-    
-        if self.character:getModData()["NPC"].AI.findItems.Weapon and NPCUtils:evalIsWeapon(item) then
-            return true
-        end  
-    
-        if self.character:getModData()["NPC"].AI.findItems.Clothing and NPCUtils:evalIsClothing(item) then
-            return true
-        end  
-    
-        if self.character:getModData()["NPC"].AI.findItems.Meds and NPCUtils:evalIsMeds(item) then
-            return true
-        end  
-    
-        if self.character:getModData()["NPC"].AI.findItems.Bags and NPCUtils:evalIsBags(item) then
-            return true
-        end  
-    
-        if self.character:getModData()["NPC"].AI.findItems.Melee and NPCUtils:evalIsMelee(item) then
-            return true
-        end  
-    
-        if self.character:getModData()["NPC"].AI.findItems.Literature and NPCUtils:evalIsLiterature(item) then
-            return true
-        end  
-    
-        return false
-    end)
-
-    self.sqPath = {}
-    table.insert(self.sqPath, self.character:getSquare())
-    local count = 1
-
-    for i=1, self.squaresCount+1 do
-        local dist = 999
-        for sq, _ in pairs(self.itemSquares) do
-            local d = NPCUtils.getDistanceBetween(sq, self.sqPath[count])
-            if sq:getZ() ~= self.sqPath[count]:getZ() then
-                d = d + 30
-            end
-            if self.character:getModData()["NPC"].AI.TaskArgs.FIND_ITEMS_WHERE == "NEAR" then
-                if NPCUtils.getDistanceBetween(sq, self.mainPlayer) < 4 and self.mainPlayer:getZ() == sq:getZ() then
-                    dist = d
-                    self.sqPath[count+1] = sq
-                    count = count + 1
-                end    
-            else
-                if d < dist then
-                    dist = d
-                    self.sqPath[count+1] = sq
-                    count = count + 1
-                end
-            end
+        if self.character:getModData()["NPC"].AI.TaskArgs.FIND_ITEMS_WHERE == "NEAR" then
+           self:clearTooFarSquares(self.itemSquares) 
         end
-        self.itemSquares[self.sqPath[count]] = nil
-    end
 
-    self.nextPoint = 2
+        while self.squaresCount > 0 do
+            local nearestSq = self:findNearestSquare(self.itemSquares, self.sqPath[self.sqPathCount])
+            if nearestSq == nil then
+                self.squaresCount = 0
+                break
+            end
+            self.sqPath[self.sqPathCount+1] = nearestSq
+            self.sqPathCount = self.sqPathCount + 1
+
+            self.itemSquares[nearestSq] = nil
+
+            self.squaresCount = self.squaresCount - 1
+        end
+    
+        self.nextPoint = 2
+    end
 end
 
 function FindItemsTask:isComplete()
@@ -96,6 +94,10 @@ function FindItemsTask:update()
     if not self:isValid() then return false end
     local actionCount = #ISTimedActionQueue.getTimedActionQueue(self.character).queue
 
+    if self.updateItemLocationTimer > 0 then
+        self.updateItemLocationTimer = self.updateItemLocationTimer - 1
+    end
+
     if self.character:getModData().NPC.lastWalkActionForceStopped then
         self.nextPoint = self.nextPoint + 1
         self.character:getModData().NPC.lastWalkActionForceStopped = false
@@ -104,9 +106,10 @@ function FindItemsTask:update()
     if actionCount == 0 then
         if self.sqPath[self.nextPoint] == nil then
             if self.character:getModData()["NPC"].AI.TaskArgs.FIND_ITEMS_WHERE == "NEAR" then
-                if NPCUtils.getDistanceBetween(self.character, self.mainPlayer) >= 4 then 
+                local dd = NPCUtils.getDistanceBetween(self.character, self.mainPlayer)
+                if dd >= 4 then 
                     local goalSquare = NPCUtils.AdjacentFreeTileFinder_Find(self.mainPlayer:getSquare()) 
-		            ISTimedActionQueue.add(NPCWalkToAction:new(self.character, goalSquare, false))
+		            ISTimedActionQueue.add(NPCWalkToAction:new(self.character, goalSquare, dd > 6))
                 end
                 self:updateItemLocation()
                 return true
@@ -176,4 +179,31 @@ function FindItemsTask:update()
     end
 
     return true
+end
+
+function FindItemsTask:findNearestSquare(squares, lastSq)
+    local dist = 999
+    local resultSquare = nil
+
+    for sq, _ in pairs(squares) do
+        local d = NPCUtils.getDistanceBetween(sq, lastSq)
+        if sq:getZ() ~= lastSq:getZ() then
+            d = d + 30
+        end
+        if d < dist then
+            dist = d
+            resultSquare = sq    
+        end
+    end
+
+    return resultSquare
+end
+
+function FindItemsTask:clearTooFarSquares(squares)
+    for sq, _ in pairs(squares) do
+        if NPCUtils.getDistanceBetween(sq, self.mainPlayer) > 4 or self.mainPlayer:getZ() ~= sq:getZ() then
+            squares[sq] = nil
+            self.squaresCount = self.squaresCount - 1
+        end
+    end
 end

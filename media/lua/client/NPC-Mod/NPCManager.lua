@@ -19,7 +19,6 @@ function NPCManager:OnTickUpdate()
     NPCManager.loadedNPC = 0
     for i, char in ipairs(NPCManager.characters) do
         char:update()
-        print(char.AI:getType(), " TYPETYPE")
 
         if char.character:isDead() then
             local name = char.character:getDescriptor():getForename() .. " " .. char.character:getDescriptor():getSurname()
@@ -85,7 +84,7 @@ NPCManager.hitPlayer = function(wielder, victim, weapon, damage)
         else
             victim:getModData()["NPC"]:hitPlayer(wielder, weapon, damage)
 
-            if ZombRand(0, MeetSystem.chanceToSay) == 0 then
+            if ZombRand(0, 4) == 0 then
                 if victim:getModData().NPC.reputationSystem.defaultReputation < 0 then
                     victim:getModData().NPC:Say(NPC_Dialogues.angryWarning[ZombRand(1, #NPC_Dialogues.angryWarning+1)], NPCColor.White)
                 else
@@ -200,8 +199,31 @@ NPCManager.onMouseDown = function()
             local x, y = ISCoordConversion.ToWorld(getMouseXScaled(), getMouseYScaled(), getPlayer():getZ())
             NPCManager.sector.x2 = x
             NPCManager.sector.y2 = y  
+
+            if NPCManager.sector.x1 > NPCManager.sector.x2 then
+                local t = NPCManager.sector.x1
+                NPCManager.sector.x1 = NPCManager.sector.x2
+                NPCManager.sector.x2 = t
+            end
+            if NPCManager.sector.y1 > NPCManager.sector.y2 then
+                local t = NPCManager.sector.y1
+                NPCManager.sector.y1 = NPCManager.sector.y2
+                NPCManager.sector.y2 = t
+            end
             
             NPCManager.chooseSector = false
+
+            if NPCManager.isBaseChoose then
+                NPCGroupManager.playerBase.x1 = NPCManager.sector.x1
+                NPCGroupManager.playerBase.y1 = NPCManager.sector.y1
+                NPCGroupManager.playerBase.x2 = NPCManager.sector.x2
+                NPCGroupManager.playerBase.y2 = NPCManager.sector.y2
+                NPCManager.isBaseChoose = false
+            end
+
+            if NPCManager.isDropLootChoose then
+                NPCGroupManager.dropLoot[NPCManager.isDropLootType] = {x1 = NPCManager.sector.x1, y1 = NPCManager.sector.y1, x2 = NPCManager.sector.x2, y2 = NPCManager.sector.y2, z = getPlayer():getZ()}
+            end
         end
     end
 end
@@ -222,7 +244,7 @@ function ISInventoryTransferAction:perform()
     tempTrasferPerfFunc(self)
     for i, char in ipairs(NPCManager.characters) do
         if NPCUtils.getDistanceBetween(char.character, getPlayer()) < 30 then
-            table.insert(char.AI.nearbyItems.containers, self.destContainer)
+            table.insert(ScanSquaresSystem.nearbyItems.containers, self.destContainer)
             char.AI.EatTaskTimer = 0
             char.AI.DrinkTaskTimer = 0
         end
@@ -449,6 +471,8 @@ function NPCManager.LoadGlobalModData()
     NPCManager.characterMap = ModData.getOrCreate("characterMap")
 
     NPCGroupManager.Groups = ModData.getOrCreate("NPCGroups")
+    NPCGroupManager.playerBase = ModData.getOrCreate("NPCPlayerBase")
+    NPCGroupManager.dropLoot = ModData.getOrCreate("NPCDropLoot")
 
     MeetSystem.Data = ModData.getOrCreate("MeetSystemData")
 end

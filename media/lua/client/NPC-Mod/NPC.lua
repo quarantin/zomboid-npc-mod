@@ -661,7 +661,7 @@ function NPC:getNearestItemSquareInNearbyItems(evalFunc)
 	local result = nil
 	local resultSq = nil
 
-	for i, container in ipairs(self.AI.nearbyItems.containers) do
+	for i, container in ipairs(ScanSquaresSystem.nearbyItems.containers) do
 		local item = container:getFirstEvalRecurse(evalFunc)
 		local d = NPCUtils.getDistanceBetween(container:getSourceGrid(), self.character)
 		if item and d < dist then
@@ -671,7 +671,7 @@ function NPC:getNearestItemSquareInNearbyItems(evalFunc)
 		end
 	end
 
-	for i, sq in ipairs(self.AI.nearbyItems.itemSquares) do
+	for i, sq in ipairs(ScanSquaresSystem.nearbyItems.itemSquares) do
 		local items = sq:getWorldObjects()
 		local d = NPCUtils.getDistanceBetween(sq, self.character)
 		for j=0, items:size()-1 do
@@ -695,7 +695,7 @@ function NPC:getNearestItemSquareInNearbyItems(evalFunc)
 		end	
 	end
 
-	for i, body in ipairs(self.AI.nearbyItems.deadBodies) do
+	for i, body in ipairs(ScanSquaresSystem.nearbyItems.deadBodies) do
 		local container = body:getContainer()
 		local item = container:getFirstEvalRecurse(evalFunc)
 		local d = NPCUtils.getDistanceBetween(container:getSourceGrid(), self.character)
@@ -713,7 +713,7 @@ function NPC:getItemsSquareInNearbyItems(evalFunc)
 	local resultItemSquares = {}
 	local count = 0
 	
-	for _, container in ipairs(self.AI.nearbyItems.containers) do
+	for _, container in ipairs(ScanSquaresSystem.nearbyItems.containers) do
 		local items = container:getAllEvalRecurse(evalFunc)
 		if items:size() > 0 then
 			resultItemSquares[container:getSourceGrid()] = true
@@ -721,7 +721,7 @@ function NPC:getItemsSquareInNearbyItems(evalFunc)
 		end
 	end
 
-	for _, sq in ipairs(self.AI.nearbyItems.itemSquares) do
+	for _, sq in ipairs(ScanSquaresSystem.nearbyItems.itemSquares) do
 		local items = sq:getWorldObjects()
 		for j=0, items:size()-1 do
 			local item = items:get(j):getItem()
@@ -744,7 +744,7 @@ function NPC:getItemsSquareInNearbyItems(evalFunc)
 		end	
 	end
 
-	for i, body in ipairs(self.AI.nearbyItems.deadBodies) do
+	for i, body in ipairs(ScanSquaresSystem.nearbyItems.deadBodies) do
 		local container = body:getContainer()
 		local items = container:getAllEvalRecurse(evalFunc)
 		if items:size() > 0 then
@@ -803,55 +803,6 @@ function NPC:getItemsInSquare(evalFunc, sq)
 	return resultItems
 end
 
---[[
-function NPC:getItemsSquareInNearbyItems(evalFunc)
-	local resultItems = {}
-	local resultItemSquares = {}
-
-	for _, container in ipairs(self.AI.nearbyItems.containers) do
-		local items = container:getAllEvalRecurse(evalFunc)
-		for i=1, items:size() do
-			local item = items:get(i-1)
-			table.insert(resultItems, item)
-			resultItemSquares[item] = container:getSourceGrid()
-		end
-	end
-
-	for _, sq in ipairs(self.AI.nearbyItems.itemSquares) do
-		local items = sq:getWorldObjects()
-		for j=0, items:size()-1 do
-			local item = items:get(j):getItem()
-			if item then
-				if evalFunc(item) then
-					table.insert(resultItems, item)
-					resultItemSquares[item] = sq
-				else
-					if item:getCategory() == "Container" then
-						local items2 = item:getInventory():getAllEvalRecurse(evalFunc)
-						for i=1, items2:size() do
-							local item2 = items2:get(i-1)
-							table.insert(resultItems, item2)
-							resultItemSquares[item2] = sq
-						end
-					end
-				end
-			end
-		end	
-	end
-
-	for i, body in ipairs(self.AI.nearbyItems.deadBodies) do
-		local container = body:getContainer()
-		local items = container:getAllEvalRecurse(evalFunc)
-		for i=1, items:size() do
-			local item = items:get(i-1)
-			table.insert(resultItems, item)
-			resultItemSquares[item] = container:getSourceGrid()
-		end
-	end
-
-	return resultItems, resultItemSquares
-end
-]]--
 function NPC:getFreeFood()
 	local container = self.character:getInventory()
 	local foodTable = {}

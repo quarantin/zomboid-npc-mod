@@ -31,7 +31,7 @@ function WashTask:getInfWater()
     local dist = 10
     local resWaterS = nil
 
-    for i, water in ipairs(self.character:getModData()["NPC"].AI.nearbyItems.clearWaterSources) do
+    for i, water in ipairs(ScanSquaresSystem.nearbyItems.clearWaterSources) do
         local d = NPCUtils.getDistanceBetween(water, self.character)
         if d < dist and water:getWaterAmount() > 5000 then
             dist = d
@@ -39,7 +39,7 @@ function WashTask:getInfWater()
         end        
     end
 
-    for i, water in ipairs(self.character:getModData()["NPC"].AI.nearbyItems.tainedWaterSources) do
+    for i, water in ipairs(ScanSquaresSystem.nearbyItems.tainedWaterSources) do
         local d = NPCUtils.getDistanceBetween(water, self.character)
         if d < dist and water:getWaterAmount() > 5000 then
             dist = d
@@ -54,7 +54,7 @@ function WashTask:getTainedWater()
     local dist = 10
     local resWaterS = nil
 
-    for i, water in ipairs(self.character:getModData()["NPC"].AI.nearbyItems.tainedWaterSources) do
+    for i, water in ipairs(ScanSquaresSystem.nearbyItems.tainedWaterSources) do
         local d = NPCUtils.getDistanceBetween(water, self.character)
         if d < dist then
             dist = d
@@ -69,7 +69,7 @@ function WashTask:getClearWater()
     local dist = 10
     local resWaterS = nil
 
-    for i, water in ipairs(self.character:getModData()["NPC"].AI.nearbyItems.tainedWaterSources) do
+    for i, water in ipairs(ScanSquaresSystem.nearbyItems.tainedWaterSources) do
         local d = NPCUtils.getDistanceBetween(water, self.character)
         if d < dist then
             dist = d
@@ -85,8 +85,6 @@ function WashTask:update()
     local actionCount = #ISTimedActionQueue.getTimedActionQueue(self.character).queue
 
     if actionCount == 0 and not self.isDone then
-        self.character:getModData()["NPC"].AI:findNearbyItems()
-
         -- nearest water source with infinite/tained/clear water source in radius 10
         local waterSource = self:getInfWater()
         if waterSource == nil then

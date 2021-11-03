@@ -37,11 +37,9 @@ function NPCRadialMenu:showRadialMenu()
 
 	menu:addSlice("Group Tasks", nil, NPCRadialMenu.groupTasks, playerObj)
 
-	menu:addSlice("CHOOSE SECTOR", nil, function() 
-		NPCManager.chooseSector = true 
-		NPCManager.sector = nil
-	end)
+	menu:addSlice("Choose sector...", nil, NPCRadialMenu.chooseSector, playerObj)
 
+	
     menu:addToUIManager()
 
 	if JoypadState.players[playerObj:getPlayerNum()+1] then
@@ -62,6 +60,93 @@ function NPCRadialMenu.groupTasks(playerObj)
 
 	menu:addSlice("Set passive attack mode", getTexture("media/textures/NPC_peaceIcon.png"), NPCRadialMenu.AgressivePassiveAttackMode, npc, false, true)
 	menu:addSlice("Set aggressive attack mode", getTexture("media/textures/NPC_AgressiveIcon.png"), NPCRadialMenu.AgressivePassiveAttackMode, npc, true, true)
+
+	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
+	menu:setY(getPlayerScreenTop(playerIndex) + getPlayerScreenHeight(playerIndex) / 2 - menu:getHeight() / 2)
+	menu:addToUIManager()
+	if JoypadState.players[playerObj:getPlayerNum()+1] then
+		menu:setHideWhenButtonReleased(Joypad.DPadUp)
+		setJoypadFocus(playerObj:getPlayerNum(), menu)
+		playerObj:setJoypadIgnoreAimUntilCentered(true)
+	end
+end
+
+function NPCRadialMenu.chooseSector(playerObj)
+	local playerIndex = playerObj:getPlayerNum()
+	local menu = getPlayerRadialMenu(playerIndex)
+	menu:clear()
+
+	menu:addSlice("Choose base", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isBaseChoose = true
+	end)
+
+	menu:addSlice("Choose drop loot sectors...", nil, NPCRadialMenu.chooseSecotorsDropLoot, playerObj)
+
+	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
+	menu:setY(getPlayerScreenTop(playerIndex) + getPlayerScreenHeight(playerIndex) / 2 - menu:getHeight() / 2)
+	menu:addToUIManager()
+	if JoypadState.players[playerObj:getPlayerNum()+1] then
+		menu:setHideWhenButtonReleased(Joypad.DPadUp)
+		setJoypadFocus(playerObj:getPlayerNum(), menu)
+		playerObj:setJoypadIgnoreAimUntilCentered(true)
+	end
+end
+
+function NPCRadialMenu.chooseSecotorsDropLoot(playerObj)
+	local playerIndex = playerObj:getPlayerNum()
+	local menu = getPlayerRadialMenu(playerIndex)
+	menu:clear()
+
+	menu:addSlice("Food", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isDropLootChoose = true
+		NPCManager.isDropLootType = "FOOD"
+	end)
+
+	menu:addSlice("Weapon", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isDropLootChoose = true
+		NPCManager.isDropLootType = "WEAPON"
+	end)
+
+	menu:addSlice("Clothing", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isDropLootChoose = true
+		NPCManager.isDropLootType = "CLOTHING"
+	end)
+
+	menu:addSlice("Meds", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isDropLootChoose = true
+		NPCManager.isDropLootType = "MEDS"
+	end)
+
+	menu:addSlice("Bags", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isDropLootChoose = true
+		NPCManager.isDropLootType = "BAGS"
+	end)
+
+	menu:addSlice("Melee", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isDropLootChoose = true
+		NPCManager.isDropLootType = "MELEE"
+	end)
+
+	menu:addSlice("Literature", nil, function()
+		NPCManager.chooseSector = true 
+		NPCManager.sector = nil
+		NPCManager.isDropLootChoose = true
+		NPCManager.isDropLootType = "LITERATURE"
+	end)
 
 	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
 	menu:setY(getPlayerScreenTop(playerIndex) + getPlayerScreenHeight(playerIndex) / 2 - menu:getHeight() / 2)
@@ -235,6 +320,8 @@ function NPCRadialMenu.npcTasks(playerObj, npc)
 	
 	menu:addSlice("Talk", nil, NPCRadialMenu.Talk, npc)
 
+	menu:addSlice("Drop loot", nil, NPCRadialMenu.dropLoot, npc)
+
 	-- WASH
 	local washYourself = ISWashYourself.GetRequiredWater(npc.character) > 0
 	local washWeapon = false
@@ -400,6 +487,9 @@ function NPCRadialMenu.Talk(npc)
 	npc.AI.TaskArgs = getPlayer()
 end
 
+function NPCRadialMenu.dropLoot(npc)
+	npc.AI.command = "DROP_LOOT"
+end
 
 function NPCRadialMenu.Sit(npc)
 	npc.character:reportEvent("EventSitOnGround")
@@ -624,23 +714,26 @@ end
 function NPCRadialMenu.findItemsDo(npc, where, isGroupTask)
 	if isGroupTask then
 		for i, char in ipairs(NPCManager.characters) do
-			local settings = ModData.getOrCreate("NPCGroupFindTaskSettings")
-			char.AI.findItems.Food = settings.Food
-			char.AI.findItems.Weapon = settings.Weapon
-			char.AI.findItems.Clothing = settings.Clothing
-			char.AI.findItems.Meds = settings.Meds
-			char.AI.findItems.Bags = settings.Bags
-			char.AI.findItems.Melee = settings.Melee
-			char.AI.findItems.Literature = settings.Literature
-			
-			char.AI.command = "FIND_ITEMS"
-			char.AI.TaskArgs.FIND_ITEMS_WHERE = where
-			char.AI.nearbyItems.timer = 0
+			if char.AI:getType() == "PlayerGroupAI" then
+				local settings = ModData.getOrCreate("NPCGroupFindTaskSettings")
+				char.AI.findItems.Food = settings.Food
+				char.AI.findItems.Weapon = settings.Weapon
+				char.AI.findItems.Clothing = settings.Clothing
+				char.AI.findItems.Meds = settings.Meds
+				char.AI.findItems.Bags = settings.Bags
+				char.AI.findItems.Melee = settings.Melee
+				char.AI.findItems.Literature = settings.Literature
+				
+				char.AI.command = "FIND_ITEMS"
+				char.AI.TaskArgs.FIND_ITEMS_WHERE = where
+			end
 		end
 	else
 		npc.AI.command = "FIND_ITEMS"
+		if npc.AI.TaskArgs == nil then
+			npc.AI.TaskArgs = {}
+		end
 		npc.AI.TaskArgs.FIND_ITEMS_WHERE = where
-		npc.AI.nearbyItems.timer = 0
 	end
 end
 

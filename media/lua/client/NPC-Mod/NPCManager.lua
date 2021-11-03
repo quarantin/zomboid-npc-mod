@@ -9,6 +9,8 @@ NPCManager.moodlesTimer = 0
 NPCManager.characterMap = nil
 NPCManager.deadNPCList = {}
 NPCManager.loadedNPC = 0
+NPCManager.spawnON = false
+NPCManager.isSaveLoadUpdateOn = false
 
 NPCManager.chooseSector = false
 NPCManager.sector = nil
@@ -17,6 +19,7 @@ function NPCManager:OnTickUpdate()
     NPCManager.loadedNPC = 0
     for i, char in ipairs(NPCManager.characters) do
         char:update()
+        print(char.AI:getType(), " TYPETYPE")
 
         if char.character:isDead() then
             local name = char.character:getDescriptor():getForename() .. " " .. char.character:getDescriptor():getSurname()
@@ -26,7 +29,20 @@ function NPCManager:OnTickUpdate()
             NPCManager.deadNPCList[name] = char.UUID
             --
             NPCManager.characterMap[char.UUID] = nil
-            table.remove(NPCManager.characters, i)            
+            table.remove(NPCManager.characters, i)  
+            
+            ---
+            if char.isLeader then
+                table.remove(NPCGroupManager.Groups[char.groupID].npc, tablefind(NPCGroupManager.Groups[char.groupID].npc, char.UUID))
+                NPCGroupManager.Groups[char.groupID].count = NPCGroupManager.Groups[char.groupID].count - 1
+                if NPCGroupManager.Groups[char.groupID].count == 0 then
+                    NPCGroupManager.Groups[char.groupID] = nil
+                else
+                    NPCGroupManager.Groups[char.groupID].leader = NPCGroupManager.Groups[char.groupID].npc[1]
+                end
+            end
+            
+
             return
         end
         NPCManager.loadedNPC = NPCManager.loadedNPC + 1 
@@ -68,6 +84,15 @@ NPCManager.hitPlayer = function(wielder, victim, weapon, damage)
             return
         else
             victim:getModData()["NPC"]:hitPlayer(wielder, weapon, damage)
+
+            if ZombRand(0, MeetSystem.chanceToSay) == 0 then
+                if victim:getModData().NPC.reputationSystem.defaultReputation < 0 then
+                    victim:getModData().NPC:Say(NPC_Dialogues.angryWarning[ZombRand(1, #NPC_Dialogues.angryWarning+1)], NPCColor.White)
+                else
+                    victim:getModData().NPC:Say(NPC_Dialogues.friendWarning[ZombRand(1, #NPC_Dialogues.friendWarning+1)], NPCColor.White)
+                end
+            end
+                
         
             if wielder == getPlayer() then
                 if victim:getModData().NPC.groupID ~= nil then
@@ -167,13 +192,11 @@ NPCManager.onMouseDown = function()
 
     if NPCManager.chooseSector then
         if NPCManager.sector == nil then
-            print("AAA")
             NPCManager.sector = {}
             local x, y = ISCoordConversion.ToWorld(getMouseXScaled(), getMouseYScaled(), getPlayer():getZ())
             NPCManager.sector.x1 = x
             NPCManager.sector.y1 = y    
         else
-            print("BBB")
             local x, y = ISCoordConversion.ToWorld(getMouseXScaled(), getMouseYScaled(), getPlayer():getZ())
             NPCManager.sector.x2 = x
             NPCManager.sector.y2 = y  
@@ -260,16 +283,14 @@ end
 Events.OnTick.Add(NPCManager.updateZombieDangerSectors)
 
 function NPCManager.LoadGrid(square)
-    if square:getZ() == 0 and square:getZoneType() == "TownZone" and not square:isSolid() and square:isFree(false) and ZombRand(1200) == 0 and NPCManager.loadedNPC < NPCConfig.config["NPC_NUM"] then
+    if NPCManager.spawnON and square:getZ() == 0 and square:getZoneType() == "TownZone" and not square:isSolid() and square:isFree(false) and ZombRand(1200) == 0 and NPCManager.loadedNPC < NPCConfig.config["NPC_NUM"] then
         local npc = NPC:new(square, NPCPresets_GetPreset())
         npc:setAI(AutonomousAI:new(npc.character))
-
-        print("FUCK ", NPCManager.characterMap[npc.UUID])
 
         NPCManager.loadedNPC = NPCManager.loadedNPC + 1
     end
 end
---Events.LoadGridsquare.Add(NPCManager.LoadGrid)
+Events.LoadGridsquare.Add(NPCManager.LoadGrid)
 
 function NPCManager.LoadGridNewRooms(square)
     local id = square:getRoomID()
@@ -336,7 +357,6 @@ function NPCManager.SaveLoadFunc()
     if NPCManager.isSaveLoadUpdateOn == false then return end
 
     for charID, value in pairs(NPCManager.characterMap) do
-        print("DICK1")
         if value.isSaved == false then
             if NPCUtils.getDistanceBetween(getPlayer(), value.npc.character) > 60 then
                 value.x = value.npc.character:getX()
@@ -386,6 +406,7 @@ function NPCManager.OnSave()
 
             value.npc:save()
             value.isSaved = true
+            value.isLoaded = false
 
             print(charID, " npc is saved")
     end
@@ -395,25 +416,41 @@ function NPCManager.OnSave()
 end
 Events.OnSave.Add(NPCManager.OnSave)
 
-function NPCManager.OnLoad()
-    NPCManager.isSaveLoadUpdateOn = true
+function NPCManager.OnLoad() 
 end
 Events.OnLoad.Add(NPCManager.OnLoad)
 
 function NPCManager.OnGameStart()
+    print("STEP 2")
     for charID, value in pairs(NPCManager.characterMap) do
-        value.npc = NPC:load(charID, value.x, value.y, value.z, false)
-        value.isLoaded = true
-        value.isSaved = false
-        print(charID, " npc is loaded ", value.npc.character:getDescriptor():getSurname())
+        if value.isLoaded == false then
+            value.npc = NPC:load(charID, value.x, value.y, value.z, false)
+            value.isLoaded = true
+            value.isSaved = false
+            print(charID, " npc is loaded ", value.npc.character:getDescriptor():getSurname())   
+            
+            if value.npc.character:getSquare() == nil then
+                value.isLoaded = false
+                for i, char in ipairs(NPCManager.characters) do
+                    if char.UUID == value.npc.UUID then
+                        table.remove(NPCManager.characters, i)            
+                    end
+                end
+            end
+        end
     end
+    NPCManager.spawnON = true
+    NPCManager.isSaveLoadUpdateOn = true
 end
 Events.OnGameStart.Add(NPCManager.OnGameStart)
 
 function NPCManager.LoadGlobalModData()
+    print("STEP 1")
     NPCManager.characterMap = ModData.getOrCreate("characterMap")
 
     NPCGroupManager.Groups = ModData.getOrCreate("NPCGroups")
+
+    MeetSystem.Data = ModData.getOrCreate("MeetSystemData")
 end
 
 Events.OnInitGlobalModData.Add(NPCManager.LoadGlobalModData)

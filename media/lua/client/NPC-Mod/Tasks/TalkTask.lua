@@ -15,7 +15,7 @@ function TalkTask:new(character)
 
     character:getModData().NPC.AI.idleCommand = "TALK"
 
-    o.dialogue = NPC_Dialogues[ZombRand(1, #NPC_Dialogues+1)]
+    o.dialogue = NPC_Dialogues.smallTalk[ZombRand(1, #NPC_Dialogues.smallTalk+1)]
     o.dialogueCount = 1
     o.dialogueTimer = 0
 	return o

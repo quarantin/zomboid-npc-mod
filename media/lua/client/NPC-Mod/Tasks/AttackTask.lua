@@ -14,6 +14,10 @@ function AttackTask:new(character)
     o.delayTimer = 0
     o.currentRunAction = nil
 
+    if ZombRand(0, 100) == 0 then
+        character:getModData().NPC:Say(NPC_Dialogues.attackTalk[ZombRand(1, #NPC_Dialogues.attackTalk+1)], NPCColor.White)
+    end
+
 	return o
 end
 

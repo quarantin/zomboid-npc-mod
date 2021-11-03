@@ -29,6 +29,10 @@ function FleeTask:new(character)
         character:getModData()["NPC"].AI.command = ""
     end
 
+    if ZombRand(0, 100) == 0 then
+        character:getModData().NPC:Say(NPC_Dialogues.fleeTalk[ZombRand(1, #NPC_Dialogues.fleeTalk+1)], NPCColor.White)
+    end
+
 	return o
 end
 

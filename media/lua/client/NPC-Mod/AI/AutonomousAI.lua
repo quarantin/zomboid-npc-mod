@@ -230,8 +230,8 @@ function AutonomousAI:UpdateInputParams()
     --
     p.isTalkTime = 0
     if ZombRand(0, 50000) == 0 then
-        p.isTalkTime = 1   
-        self.idleCommand = "TALK" 
+       -- p.isTalkTime = 1   
+       -- self.idleCommand = "TALK" 
     end
 
     ---
@@ -364,6 +364,7 @@ function AutonomousAI:calcNPCTaskCat()
                 if NPCManager.characterMap[n] ~= self.character:getModData().NPC then
                     talk.score = 20
                     self.TaskArgs = NPCManager.characterMap[n].character
+
                     NPCManager.characterMap[n].AI.idleCommand = "TALK_COMPANION"
                     NPCManager.characterMap[n].AI.TaskArgs = self.character
                 end

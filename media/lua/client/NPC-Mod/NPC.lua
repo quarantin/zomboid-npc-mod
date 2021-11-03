@@ -274,8 +274,6 @@ function NPC:loadAI(o)
 end
 
 function NPC:update()
-	print("AAA ", self.groupID)
-
 	self.AI:update()
 
 	self.userName:update()

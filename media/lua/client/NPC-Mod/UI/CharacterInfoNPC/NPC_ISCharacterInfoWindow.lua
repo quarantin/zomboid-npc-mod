@@ -113,7 +113,7 @@ function NPC_ISCharacterInfoWindow:createChildren()
     self.panel:addView(xpSystemText.clothingIns, self.clothingView)
 
 	-- Set the correct size before restoring the layout.  Currently, ISCharacterScreen:render sets the height/width.
-    print(self.charScreen)
+    --print(self.charScreen)
 	self:setWidth(self.charScreen.width)
 	self:setHeight(self.charScreen.height);
     self.visibleOnStartup = self:getIsVisible() -- hack, see ISPlayerDataObject.lua

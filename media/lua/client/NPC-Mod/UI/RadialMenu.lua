@@ -364,7 +364,7 @@ function NPCRadialMenu.setNickname(npc)
 end
 
 function NPCRadialMenu:onSetNickname(button, character, npc)
-	print(button)
+	--print(button)
     if button.internal == "OK" then
         if button.parent.entry:getText() and button.parent.entry:getText() ~= "" then
 
@@ -382,7 +382,7 @@ function NPCRadialMenu.characterInfo(npc)
 end
 
 function NPCRadialMenu.stopTasks(npc)
-	print("STOP TASKS")
+	--print("STOP TASKS")
 	npc.AI.TaskManager:clear()
 	ISTimedActionQueue.clear(npc.character)
 	npc.character:NPCSetAttack(false)

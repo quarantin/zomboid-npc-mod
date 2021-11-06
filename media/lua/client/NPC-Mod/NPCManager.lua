@@ -402,7 +402,7 @@ end
 Events.OnLoad.Add(NPCManager.OnLoad)
 
 function NPCManager.OnGameStart()
-    NPCPrint("NPCManager", "OnGameStart", "v.0.1.10")
+    NPCPrint("NPCManager", "OnGameStart", "v.0.1.11")
 
     for charID, value in pairs(NPCManager.characterMap) do
         value.isLoaded = false

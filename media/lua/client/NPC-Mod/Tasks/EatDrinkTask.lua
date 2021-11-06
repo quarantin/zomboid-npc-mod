@@ -101,7 +101,10 @@ function EatDrinkTask:update()
             ISInventoryPaneContextMenu.transferIfNeeded(self.character, water)
         else
             local waterSource = self:getNearestWaterSource()
-
+			if not waterSource:getSquare() and not getPlayer().getModData().done then
+				getPlayer():getModdata().done = true
+				error(waterSource)
+			end
             if waterSource and waterSource:getSquare() and self.character:getModData()["NPC"]:isOkDist(waterSource) then
                 ISTimedActionQueue.add(NPCWalkToAction:new(self.character, NPCUtils.getNearestFreeSquare(self.character, waterSource:getSquare(), NPCUtils.isInRoom(waterSource:getSquare())), false))
                 local waterAvailable = waterSource:getWaterAmount()

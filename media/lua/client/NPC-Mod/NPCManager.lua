@@ -39,7 +39,7 @@ function NPCManager:OnTickUpdate()
             if char.isLeader then
                 table.remove(NPCGroupManager.Groups[char.groupID].npc, tablefind(NPCGroupManager.Groups[char.groupID].npc, char.UUID))
                 NPCGroupManager.Groups[char.groupID].count = NPCGroupManager.Groups[char.groupID].count - 1
-                if NPCGroupManager.Groups[char.groupID].count == 0 then
+                if NPCGroupManager.Groups[char.groupID].count <= 0 then
                     NPCGroupManager.Groups[char.groupID] = nil
                 else
                     NPCGroupManager.Groups[char.groupID].leader = NPCGroupManager.Groups[char.groupID].npc[1]
@@ -402,7 +402,7 @@ end
 Events.OnLoad.Add(NPCManager.OnLoad)
 
 function NPCManager.OnGameStart()
-    NPCPrint("NPCManager", "OnGameStart")
+    NPCPrint("NPCManager", "OnGameStart", "v.0.1.7")
 
     for charID, value in pairs(NPCManager.characterMap) do
         value.isLoaded = false

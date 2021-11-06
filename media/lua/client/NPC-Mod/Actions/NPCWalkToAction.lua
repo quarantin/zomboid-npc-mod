@@ -4,10 +4,13 @@ NPCWalkToAction = ISBaseTimedAction:derive("NPCWalkToAction");
 
 function NPCWalkToAction:isValid()
 	if self.character:getVehicle() then return false end
+    if self.location == nil then return false end
     return true;
 end
 
 function NPCWalkToAction:update()
+    if not self:isValid() then return end
+
     if self.isRun then
         self.character:setRunning(true)
         self.character:setVariable("WalkSpeed", 10);    
@@ -21,37 +24,53 @@ function NPCWalkToAction:update()
         NPCPrint("NPCWalkToAction", "Pathfind failed", self.character:getModData().NPC.UUID, self.character:getDescriptor():getSurname()) 
         
         local nearestDoor = self:getNearestDoor(self.character:getX(), self.character:getY(), self.character:getZ())
-        local nearestWindow = self:getNearestWindow(self.character:getX(), self.character:getY(), self.character:getZ())
+        local window = self:getNearestWindow(self.character:getX(), self.character:getY(), self.character:getZ())
 
         if nearestDoor and (nearestDoor:isLocked() or nearestDoor:isBarricaded()) then
-            if nearestWindow and not nearestWindow:isBarricaded() then
-                local sq = self:getSameOutsideSquare(self.character, nearestWindow:getSquare(), nearestWindow:getOppositeSquare()) -- TODO CAN BE ERROR
+            if window then
+                local sq = self:getSameOutsideSquare(self.character, window:getSquare(), window:getOppositeSquare()) -- TODO CAN BE ERROR
                 self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ())
-                if not nearestWindow:isPermaLocked() then
-                    if not nearestWindow:IsOpen() then
-                        local act = ISOpenCloseWindow:new(self.character, nearestWindow, 100)
-                        ISTimedActionQueue.addAfter(self, act)
-                        local act3 = ISClimbThroughWindow:new(self.character, nearestWindow, 100)
-                        ISTimedActionQueue.addAfter(act, act3)
+
+                if window:isPermaLocked() or window:isLocked() then
+                    if window:isSmashed() then
+                        if window:isGlassRemoved() then
+                            local act1 = ISClimbThroughWindow:new(self.character, window, 0)
+                            ISTimedActionQueue.addAfter(self, act1)
+                            local act2 = NPCWalkToAction:new(self.character, self.location, self.isRun)
+                            ISTimedActionQueue.addAfter(act1, act2)
+                        else
+                            local act1 = ISRemoveBrokenGlass:new(self.character, window, 0)
+                            ISTimedActionQueue.addAfter(self, act1)
+                            local act2 = ISClimbThroughWindow:new(self.character, window, 0)
+                            ISTimedActionQueue.addAfter(act1, act2)
+                            local act3 = NPCWalkToAction:new(self.character, self.location, self.isRun)
+                            ISTimedActionQueue.addAfter(act2, act3)
+                        end
                     else
-                        local act1 = ISClimbThroughWindow:new(self.character, nearestWindow, 100)
+                        local act1 = ISSmashWindow:new(self.character, window, 0)
                         ISTimedActionQueue.addAfter(self, act1)
+                        local act2 = ISRemoveBrokenGlass:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(act1, act2)
+                        local act3 = ISClimbThroughWindow:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(act2, act3)
+                        local act4 = NPCWalkToAction:new(self.character, self.location, self.isRun)
+                        ISTimedActionQueue.addAfter(act3, act4)
                     end
-                    return
                 else
-                    if not nearestWindow:IsOpen() then
-                        local act = ISSmashWindow:new(self.character, nearestWindow, 0)
-                        ISTimedActionQueue.addAfter(self, act);  
-                        local act2 = ISRemoveBrokenGlass:new(self.character, nearestWindow, 100)
-                        ISTimedActionQueue.addAfter(act, act2);
-                        local act3 = ISClimbThroughWindow:new(self.character, nearestWindow, 20)
+                    if window:IsOpen() then
+                        local act2 = ISClimbThroughWindow:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(self, act2)
+                        local act3 = NPCWalkToAction:new(self.character, self.location, self.isRun)
                         ISTimedActionQueue.addAfter(act2, act3)
                     else
-                        local act1 = ISClimbThroughWindow:new(self.character, nearestWindow, 100)
+                        local act1 = ISOpenCloseWindow:new(self.character, window, 0)
                         ISTimedActionQueue.addAfter(self, act1)
+                        local act2 = ISClimbThroughWindow:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(act1, act2)
+                        local act3 = NPCWalkToAction:new(self.character, self.location, self.isRun)
+                        ISTimedActionQueue.addAfter(act2, act3)
                     end
-                    return
-                end            
+                end
             end
         end
         
@@ -74,14 +93,94 @@ function NPCWalkToAction:update()
     self.timer = self.timer + 1
 
     if self.timer == 500 then
+        NPCPrint("NPCWalkToAction", "Stop by timer 500", self.character:getModData().NPC.UUID, self.character:getDescriptor():getSurname()) 
         self.character:getModData().NPC.lastWalkActionFailed = true
         self:forceStop()
     end    
 end
 
 function NPCWalkToAction:start()
+    if not self:isValid() then return end
     NPCPrint("NPCWalkToAction", "Calling pathfind method", self.character:getModData().NPC.UUID, self.character:getDescriptor():getSurname()) 
-    self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+
+    if self.character:getSquare():isOutside() and not self.location:isOutside() then
+        local buildID = self.location:getBuilding():getID()
+
+        local doorUnlocked, doorLocked = self:getNearestDoorWithBuildingID(self.location:getX(), self.location:getY(), self.character:getZ(), buildID)
+        local windowUnlocked, windowLocked = self:getNearestWindowWithBuildingID(self.location:getX(), self.location:getY(), self.character:getZ(), buildID)
+        
+        local door = doorUnlocked
+        if door == nil then door = doorLocked end
+        local window = windowUnlocked
+        if window == nil then window = windowLocked end
+
+        if door and not door:isLocked() and not door:isLockedByKey() then
+            if self.withOptimisation then
+                local sq = self:getSameOutsideSquare(self.character, door:getSquare(), door:getOppositeSquare())    -- TODO CAN BE ERROR
+                self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ());
+                ISTimedActionQueue.addAfter(self, NPCWalkToAction:new(self.character, self.location, self.isRun, false))
+
+                print(door:getSquare():getX(), " ", door:getSquare():getY())
+            else
+                self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+            end
+        elseif window then
+            if self.withOptimisation then
+                local sq = self:getSameOutsideSquare(self.character, window:getSquare(), window:getOppositeSquare())    -- TODO CAN BE ERROR
+                self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ());
+                
+                if window:isPermaLocked() or window:isLocked() then
+                    if window:isSmashed() then
+                        if window:isGlassRemoved() then
+                            local act1 = ISClimbThroughWindow:new(self.character, window, 10)
+                            ISTimedActionQueue.addAfter(self, act1)
+                            local act2 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                            ISTimedActionQueue.addAfter(act1, act2)
+                        else
+                            local act1 = ISRemoveBrokenGlass:new(self.character, window, 0)
+                            ISTimedActionQueue.addAfter(self, act1)
+                            local act2 = ISClimbThroughWindow:new(self.character, window, 10)
+                            ISTimedActionQueue.addAfter(act1, act2)
+                            local act3 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                            ISTimedActionQueue.addAfter(act2, act3)
+                        end
+                    else
+                        local act1 = ISSmashWindow:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(self, act1)
+                        local act2 = ISRemoveBrokenGlass:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(act1, act2)
+                        local act3 = ISClimbThroughWindow:new(self.character, window, 10)
+                        ISTimedActionQueue.addAfter(act2, act3)
+                        local act4 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                        ISTimedActionQueue.addAfter(act3, act4)
+                    end
+                else
+                    if window:IsOpen() then
+                        local act2 = ISClimbThroughWindow:new(self.character, window, 10)
+                        ISTimedActionQueue.addAfter(self, act2)
+                        local act3 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                        ISTimedActionQueue.addAfter(act2, act3)
+                    else
+                        local act1 = ISOpenCloseWindow:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(self, act1)
+                        local act2 = WaitAction:new(self.character, 40)
+                        ISTimedActionQueue.addAfter(act1, act2)
+                        local act3 = ISClimbThroughWindow:new(self.character, window, 10)
+                        ISTimedActionQueue.addAfter(act2, act3)
+                        local act4 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                        ISTimedActionQueue.addAfter(act3, act4)
+                    end
+                end
+            else
+                self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+            end
+        else
+            print("DICK just go")
+            self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+        end
+    else
+        self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+    end
 end
 
 function NPCWalkToAction:stop()
@@ -110,7 +209,7 @@ function NPCWalkToAction:setOnComplete(func, arg1, arg2, arg3, arg4)
 end
 
 
-function NPCWalkToAction:new (character, location, isRun)
+function NPCWalkToAction:new(character, location, isRun, withOptimisation)
     local o = {}
     setmetatable(o, self)
     self.__index = self
@@ -123,6 +222,10 @@ function NPCWalkToAction:new (character, location, isRun)
     o.pathIndex = 0;
 
     o.isRun = isRun
+    o.withOptimisation = withOptimisation
+    if o.withOptimisation == nil then
+        o.withOptimisation = true
+    end
 
     o.lastX = character:getX();
     o.lastY = character:getY();
@@ -139,7 +242,7 @@ function NPCWalkToAction:getNearestDoor(x, y, z)
     for i = -10, 10 do
 		for j = -10, 10 do
 			local sq = getSquare(x + i, y + j, z)
-			if sq and NPCUtils:getDoor(sq) ~= nil then
+			if sq and NPCUtils:getDoor(sq) ~= nil and not NPCUtils:getDoor(sq):isBarricaded() then
 				local d = NPCUtils.getDistanceBetween(sq, getSquare(x, y, z))
 				if d < dist then
 					result = NPCUtils:getDoor(sq)
@@ -157,7 +260,7 @@ function NPCWalkToAction:getNearestWindow(x, y, z)
     for i = -10, 10 do
 		for j = -10, 10 do
 			local sq = getSquare(x + i, y + j, z)
-			if sq and sq:getWindow() ~= nil then
+			if sq and sq:getWindow() ~= nil and not sq:getWindow():isBarricaded() then
 				local d = NPCUtils.getDistanceBetween(sq, getSquare(x, y, z))
 				if d < dist then
 					result = sq:getWindow()
@@ -185,4 +288,66 @@ function NPCWalkToAction:getSameOutsideSquare(char, sq1, sq2)
             return sq2
         end
     end
+end
+
+function NPCWalkToAction:getNearestWindowWithBuildingID(x, y, z, id)
+    local resultUnlocked = nil
+	local distToUnlocked = 9999
+    local resultLocked = nil
+	local distToLocked = 9999
+
+    for i = -10, 10 do
+		for j = -10, 10 do
+			local sq = getSquare(x + i, y + j, z)
+			if sq and sq:getWindow() ~= nil and not sq:getWindow():isBarricaded() then
+                local win = sq:getWindow()
+                if (win:getSquare():getBuilding() and win:getSquare():getBuilding():getID() == id and win:getOppositeSquare():isOutside()) or (win:getOppositeSquare():getBuilding() and win:getOppositeSquare():getBuilding():getID() == id and win:getSquare():isOutside()) then
+                    local d = NPCUtils.getDistanceBetween(sq, getSquare(x, y, z))
+                    if win:isLocked() or win:isPermaLocked() then
+                        if d < distToLocked then
+                            resultLocked = win
+                            distToLocked = d
+                        end
+                    else
+                        if d < distToUnlocked then
+                            resultUnlocked = win
+                            distToUnlocked = d
+                        end
+                    end
+                end
+			end
+		end
+	end
+	return resultUnlocked, resultLocked
+end
+
+function NPCWalkToAction:getNearestDoorWithBuildingID(x, y, z, id)
+    local resultUnlocked = nil
+	local distToUnlocked = 9999
+    local resultLocked = nil
+	local distToLocked = 9999
+
+    for i = -10, 10 do
+		for j = -10, 10 do
+			local sq = getSquare(x + i, y + j, z)
+			if sq and NPCUtils:getDoor(sq) ~= nil and not NPCUtils:getDoor(sq):isBarricaded() then
+                local door = NPCUtils:getDoor(sq)
+                if (door:getSquare():getBuilding() and door:getSquare():getBuilding():getID() == id and door:getOppositeSquare():isOutside()) or (door:getOppositeSquare():getBuilding() and door:getOppositeSquare():getBuilding():getID() == id and door:getSquare():isOutside()) then
+                    local d = NPCUtils.getDistanceBetween(sq, getSquare(x, y, z))
+                    if door:isLocked() or door:isLockedByKey() then
+                        if d < distToLocked then
+                            resultLocked = door
+                            distToLocked = d
+                        end
+                    else
+                        if d < distToUnlocked then
+                            resultUnlocked = door
+                            distToUnlocked = d
+                        end
+                    end
+                end
+			end
+		end
+	end
+	return resultUnlocked, resultLocked
 end

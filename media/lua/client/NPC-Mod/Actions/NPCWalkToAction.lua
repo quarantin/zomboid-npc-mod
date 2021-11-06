@@ -104,7 +104,7 @@ function NPCWalkToAction:start()
     if not self:isValid() then return end
     NPCPrint("NPCWalkToAction", "Calling pathfind method", self.character:getModData().NPC.UUID, self.character:getDescriptor():getSurname()) 
 
-    if self.character:getSquare():isOutside() and not self.location:isOutside() then
+    if self.character:getSquare():isOutside() and not self.location:isOutside() and self.location:getBuilding() then
         local buildID = self.location:getBuilding():getID()
 
         local doorUnlocked, doorLocked = self:getNearestDoorWithBuildingID(self.location:getX(), self.location:getY(), self.character:getZ(), buildID)
@@ -121,8 +121,6 @@ function NPCWalkToAction:start()
                 if sq == nil then return false end
                 self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ());
                 ISTimedActionQueue.addAfter(self, NPCWalkToAction:new(self.character, self.location, self.isRun, false))
-
-                print(door:getSquare():getX(), " ", door:getSquare():getY())
             else
                 self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
             end
@@ -178,7 +176,80 @@ function NPCWalkToAction:start()
                 self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
             end
         else
-            print("DICK just go")
+            self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+        end
+    elseif not self.character:getSquare():isOutside() and self.location:isOutside() then
+        local buildID = self.character:getSquare():getBuilding():getID()
+
+        local doorUnlocked, doorLocked = self:getNearestDoorWithBuildingID(self.location:getX(), self.location:getY(), self.character:getZ(), buildID)
+        local windowUnlocked, windowLocked = self:getNearestWindowWithBuildingID(self.location:getX(), self.location:getY(), self.character:getZ(), buildID)
+
+        local door = doorUnlocked
+        if door == nil then door = doorLocked end
+        local window = windowUnlocked
+        if window == nil then window = windowLocked end
+
+        if door then
+            if self.withOptimisation then
+                local sq = self:getSameOutsideSquare(self.character, door:getSquare(), door:getOppositeSquare())
+                if sq == nil then return false end
+                self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ());
+                ISTimedActionQueue.addAfter(self, NPCWalkToAction:new(self.character, self.location, self.isRun, false))
+            else
+                self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+            end
+        elseif window then
+            if self.withOptimisation then
+                local sq = self:getSameOutsideSquare(self.character, window:getSquare(), window:getOppositeSquare())
+                if sq == nil then return false end
+                self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ());
+                
+                if window:isPermaLocked() then
+                    if window:isSmashed() then
+                        if window:isGlassRemoved() then
+                            local act1 = ISClimbThroughWindow:new(self.character, window, 10)
+                            ISTimedActionQueue.addAfter(self, act1)
+                            local act2 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                            ISTimedActionQueue.addAfter(act1, act2)
+                        else
+                            local act1 = ISRemoveBrokenGlass:new(self.character, window, 0)
+                            ISTimedActionQueue.addAfter(self, act1)
+                            local act2 = ISClimbThroughWindow:new(self.character, window, 10)
+                            ISTimedActionQueue.addAfter(act1, act2)
+                            local act3 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                            ISTimedActionQueue.addAfter(act2, act3)
+                        end
+                    else
+                        local act1 = ISSmashWindow:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(self, act1)
+                        local act2 = ISRemoveBrokenGlass:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(act1, act2)
+                        local act3 = ISClimbThroughWindow:new(self.character, window, 10)
+                        ISTimedActionQueue.addAfter(act2, act3)
+                        local act4 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                        ISTimedActionQueue.addAfter(act3, act4)
+                    end
+                else
+                    if window:IsOpen() then
+                        local act2 = ISClimbThroughWindow:new(self.character, window, 10)
+                        ISTimedActionQueue.addAfter(self, act2)
+                        local act3 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                        ISTimedActionQueue.addAfter(act2, act3)
+                    else
+                        local act1 = ISOpenCloseWindow:new(self.character, window, 0)
+                        ISTimedActionQueue.addAfter(self, act1)
+                        local act2 = WaitAction:new(self.character, 40)
+                        ISTimedActionQueue.addAfter(act1, act2)
+                        local act3 = ISClimbThroughWindow:new(self.character, window, 10)
+                        ISTimedActionQueue.addAfter(act2, act3)
+                        local act4 = NPCWalkToAction:new(self.character, self.location, self.isRun, false)
+                        ISTimedActionQueue.addAfter(act3, act4)
+                    end
+                end
+            else
+                self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
+            end
+        else
             self.character:getPathFindBehavior2():pathToLocation(self.location:getX(), self.location:getY(), self.location:getZ());
         end
     else

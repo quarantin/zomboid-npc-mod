@@ -1,7 +1,3 @@
---***********************************************************
---**                    THE INDIE STONE                    **
---***********************************************************
-
 require "TimedActions/ISBaseTimedAction"
 
 NPCAttachItemHotbar = ISBaseTimedAction:derive("NPCAttachItemHotbar");
@@ -11,7 +7,6 @@ function NPCAttachItemHotbar:isValid()
 end
 
 function NPCAttachItemHotbar:update()
-	
 end
 
 function NPCAttachItemHotbar:start()

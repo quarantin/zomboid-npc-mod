@@ -1,7 +1,3 @@
---***********************************************************
---**                    THE INDIE STONE                    **
---***********************************************************
-
 require "TimedActions/ISBaseTimedAction"
 
 NPCDetachItemHotbar = ISBaseTimedAction:derive("NPCDetachItemHotbar");
@@ -11,7 +7,6 @@ function NPCDetachItemHotbar:isValid()
 end
 
 function NPCDetachItemHotbar:update()
-	
 end
 
 function NPCDetachItemHotbar:start()

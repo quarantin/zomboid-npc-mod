@@ -161,7 +161,7 @@ function AutonomousAI:UpdateInputParams()
 
     p.isTooDangerous = 0                -- (1-yes, 0-no) // is too dangerous other npc or too many zombies
     if self.character:getModData()["NPC"].nearestEnemy ~= nil then
-        if self.character:getModData()["NPC"].isEnemyAtBack then
+        if self.character:getModData()["NPC"].isEnemyAtBack and self.character:getModData()["NPC"].isNearTooManyZombie then
             p.isTooDangerous = 1
         elseif self.character:getModData()["NPC"].isNearTooManyZombies or not self.agressiveAttack then
             if not self.character:isOutside() or not self.agressiveAttack then
@@ -199,15 +199,6 @@ function AutonomousAI:UpdateInputParams()
     p.goToPoint = 0
     local newRoomID = NPC_InterestPointMap:getNearestNewRoom(self.character:getX(), self.character:getY(), self.character:getModData().NPC.visitedRooms)
 
-    if newRoomID ~= nil then
-        if NPCUtils.getDistanceBetweenXYZ(NPC_InterestPointMap.Rooms[newRoomID].x, NPC_InterestPointMap.Rooms[newRoomID].y, self.character:getX(), self.character:getY()) < 6 then
-            self.checkInterestPoint = true
-            self:calcFindItemCategories()
-        else
-            p.goToPoint = 1
-        end
-    end
-    
     p.isLeader = 0
     if self.character:getModData().NPC.groupID == nil then
         p.isLeader = 1
@@ -216,6 +207,18 @@ function AutonomousAI:UpdateInputParams()
             p.isLeader = 1
         end
     end
+
+    if newRoomID ~= nil then
+        if NPCUtils.getDistanceBetweenXYZ(NPC_InterestPointMap.Rooms[newRoomID].x, NPC_InterestPointMap.Rooms[newRoomID].y, self.character:getX(), self.character:getY()) < 6 and p.isLeader == 1 then
+            self.checkInterestPoint = true
+            self:calcFindItemCategories()
+        else
+            p.goToPoint = 1
+        end
+    end
+    
+
+
 
     --
     p.isTalkTime = 0
@@ -305,7 +308,7 @@ function AutonomousAI:calcImportantCat()
 
     self.IP.isCanHeal = 0
     if self.IP.needToHeal > 0 then
-        self.IP.isCanHeal = self.IPF_isCanHeal()
+        self.IP.isCanHeal = 1
     end
 
     local firstAid = {}
@@ -452,8 +455,7 @@ function AutonomousAI:chooseTask()
 
     if self.TaskManager:getCurrentTaskScore() <= score and task ~= nil and task ~= self.TaskManager:getCurrentTaskName() then
         ISTimedActionQueue.clear(self.character)
-        --print("CURRENT TASK ", self.TaskManager:getCurrentTaskName(), " ", self.character, " ", self.character:getX(), " ", self.character:getY())
-        --print("NEW CURRENT TASK ", task, " ", self.character)
+        NPCPrint("AI", "New current task", task, self.character:getModData().NPC.UUID, self.character:getDescriptor():getSurname())
         self.TaskManager:addToTop(taskPoints[task]:new(self.character), score)
     end
 end
@@ -527,39 +529,6 @@ function AutonomousAI:hitPlayer(wielder, weapon, damage)
     end
 
     bodydamage:Update();
-end
-
-
------------------------
------------------------
-
-
-function AutonomousAI.IPF_isHaveItemsToHeal()
-    return false
-end
-
-function AutonomousAI.IPF_getItemsToHealNear()
-    return {}
-end
-
-function AutonomousAI.IPF_isNeedBandage()
-    return false
-end
-
-function AutonomousAI.IPF_isHaveFreeClothingInInv()
-    return true
-end
-
-function AutonomousAI.IPF_getClothingNear()
-    return {}
-end
-
-function AutonomousAI.IPF_isHaveClothingOnToRip()
-    return true
-end
-
-function AutonomousAI.IPF_isCanHeal()
-    return 1
 end
 
 function AutonomousAI:calcFindItemCategories()

@@ -16,6 +16,8 @@ NPCManager.chooseSector = false
 NPCManager.sector = nil
 
 function NPCManager:OnTickUpdate()
+    if getPlayer():isDead() then return end
+
     NPCManager.loadedNPC = 0
     for i, char in ipairs(NPCManager.characters) do
         char:update()
@@ -25,6 +27,9 @@ function NPCManager:OnTickUpdate()
             if char.nickname then
                 name = name .. "\"" .. char.nickname
             end
+
+            NPCPrint("NPCManager", "NPC dead", name, char.UUID)
+
             NPCManager.deadNPCList[name] = char.UUID
             --
             NPCManager.characterMap[char.UUID] = nil
@@ -38,10 +43,10 @@ function NPCManager:OnTickUpdate()
                     NPCGroupManager.Groups[char.groupID] = nil
                 else
                     NPCGroupManager.Groups[char.groupID].leader = NPCGroupManager.Groups[char.groupID].npc[1]
+                    NPCManager.characterMap[NPCGroupManager.Groups[char.groupID].leader].npc.isLeader = true
+                    NPCPrint("NPCManager", "New leader of the group. GroupID:", char.groupID, NPCGroupManager.Groups[char.groupID].leader)
                 end
             end
-            
-
             return
         end
         NPCManager.loadedNPC = NPCManager.loadedNPC + 1 
@@ -60,6 +65,8 @@ Events.OnTick.Add(NPCManager.OnTickUpdate)
 
 local refreshBackpackTimer = 0
 function NPCManager:InventoryUpdate()
+    if getPlayer():isDead() then return end
+
     if refreshBackpackTimer <= 0 then
         refreshBackpackTimer = 60
         for i, char in ipairs(NPCManager.characters) do
@@ -306,7 +313,7 @@ Events.OnTick.Add(NPCManager.updateZombieDangerSectors)
 
 function NPCManager.LoadGrid(square)
     if NPCManager.spawnON and square:getZ() == 0 and square:getZoneType() == "TownZone" and not square:isSolid() and square:isFree(false) and ZombRand(1200) == 0 and NPCManager.loadedNPC < NPCConfig.config["NPC_NUM"] then
-        local npc = NPC:new(square, NPCPresets_GetPreset())
+        local npc = NPC:new(square, NPCPresets_GetPreset(NPCPresets))
         npc:setAI(AutonomousAI:new(npc.character))
 
         NPCManager.loadedNPC = NPCManager.loadedNPC + 1
@@ -328,53 +335,6 @@ function NPCManager.LoadGridNewRooms(square)
 end
 Events.LoadGridsquare.Add(NPCManager.LoadGridNewRooms)
 
---[[
-function NPCManager.LoadGridsToPathfinding(square)
-    local tnorth = nil
-    local twest = nil
-    local thasRope = nil
-
-    if square:getWall(true) ~= nil then tnorth = "WALL" end
-    if square:getWall(false) ~= nil then twest = "WALL" end
-    if square:getHoppableWall(true) ~= nil then 
-        tnorth = "HOP_WALL" 
-    end
-    if square:getHoppableWall(false) ~= nil then
-        twest = "HOP_WALL"
-    end
-
-    if square:getDoor(true) ~= nil then tnorth = "DOOR" end
-    if square:getDoor(false) ~= nil then twest = "DOOR" end    
-    if square:getWindow(true) ~= nil then 
-        tnorth = "WINDOW" 
-        if square:getWindow(true):haveSheetRope() then
-            tnorth = "ROPE_WINDOW"
-        end
-    end
-    if square:getWindow(false) ~= nil then 
-        twest = "WINDOW" 
-        if square:getWindow(false):haveSheetRope() then
-            twest = "ROPE_WINDOW"
-        end
-    end  
-
-    if square:HasStairsNorth() then tnorth = "STAIRS" end
-    if square:HasStairsWest() then twest = "STAIRS" end
-    
-    if getPlayer():canClimbSheetRope(square) then
-        thasRope = true        
-    end
-
-    CustomPathfinding.squares["x=" .. square:getX() .. "y=" .. square:getY() .. "z=" .. square:getZ()] = {
-        isOk = square:isFree(false),
-        north = tnorth,
-        west = twest,
-        hasRope = thasRope
-    }
-end]]
---Events.LoadGridsquare.Add(NPCManager.LoadGridsToPathfinding);
-
-
 function NPCManager.SaveLoadFunc()
     if NPCManager.isSaveLoadUpdateOn == false then return end
 
@@ -388,7 +348,7 @@ function NPCManager.SaveLoadFunc()
                 value.npc:save()
                 value.isSaved = true
 
-                print(charID, " npc is saved ", value.npc.character:getDescriptor():getSurname())
+                NPCPrint("NPCManager", "NPC is saved (SaveLoadFunc)", charID, value.npc.character:getDescriptor():getSurname())
             end
         end
 
@@ -402,7 +362,7 @@ function NPCManager.SaveLoadFunc()
                 value.npc = NPC:load(charID, value.x, value.y, value.z, false)
                 value.isLoaded = true
                 value.isSaved = false
-                print(charID, " npc is loaded")
+                NPCPrint("NPCManager", "NPC is loaded (SaveLoadFunc)", charID, value.npc.character:getDescriptor():getSurname())
             end
         end
 
@@ -413,7 +373,7 @@ function NPCManager.SaveLoadFunc()
                     table.remove(NPCManager.characters, i)            
                 end
             end
-            print(charID, " npc is unloaded")
+            NPCPrint("NPCManager", "NPC is unloaded (SaveLoadFunc)", charID)
         end
     end
 end
@@ -428,9 +388,8 @@ function NPCManager.OnSave()
 
             value.npc:save()
             value.isSaved = true
-            value.isLoaded = false
 
-            print(charID, " npc is saved")
+            NPCPrint("NPCManager", "NPC is saved (OnSave)", charID, value.npc.character:getDescriptor():getSurname())
     end
 
     NPCManager.isSaveLoadUpdateOn = false
@@ -443,14 +402,15 @@ end
 Events.OnLoad.Add(NPCManager.OnLoad)
 
 function NPCManager.OnGameStart()
-    print("STEP 2")
+    NPCPrint("NPCManager", "OnGameStart")
+
     for charID, value in pairs(NPCManager.characterMap) do
-        if value.isLoaded == false then
+        value.isLoaded = false
+        if value.isLoaded == false and getCell():getGridSquare(value.x, value.y, value.z) ~= nil then
             value.npc = NPC:load(charID, value.x, value.y, value.z, false)
             value.isLoaded = true
             value.isSaved = false
-            print(charID, " npc is loaded ", value.npc.character:getDescriptor():getSurname())   
-            
+                        
             if value.npc.character:getSquare() == nil then
                 value.isLoaded = false
                 for i, char in ipairs(NPCManager.characters) do
@@ -458,6 +418,8 @@ function NPCManager.OnGameStart()
                         table.remove(NPCManager.characters, i)            
                     end
                 end
+            else
+                NPCPrint("NPCManager", "NPC is loaded (OnGameStart)", charID, value.npc.character:getDescriptor():getSurname()) 
             end
         end
     end
@@ -467,7 +429,6 @@ end
 Events.OnGameStart.Add(NPCManager.OnGameStart)
 
 function NPCManager.LoadGlobalModData()
-    print("STEP 1")
     NPCManager.characterMap = ModData.getOrCreate("characterMap")
 
     NPCGroupManager.Groups = ModData.getOrCreate("NPCGroups")

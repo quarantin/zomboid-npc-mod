@@ -20,7 +20,8 @@ function NPC:new(square, preset)
 	-- Add npc to NPCManager
 	table.insert(NPCManager.characters, o)
 	NPCManager.characterMap[o.UUID] = { isLoaded = true, isSaved = false, npc = o , x = o.character:getX(), y = o.character:getY(), z = o.character:getZ() }
-	print("NEW ", o.character:getDescriptor():getSurname())
+	
+	NPCPrint("NPC", "Create new NPC", o.character:getDescriptor():getSurname(), o.UUID)
 	---
 	IsoPlayer.setCoopPVP(true)
 	---
@@ -99,6 +100,11 @@ function NPC:createIsoPlayer(square, preset)
 						character:setPrimaryHandItem(invItem)
 					elseif element[2] == "Secondary" then
 						character:setSecondaryHandItem(invItem)
+					elseif element[2] == "Color" then
+						invItem:setColor(Color.new(element[3].r, element[3].g, element[3].b, 1))
+						if invItem:getBodyLocation() ~= "" then
+							character:setWornItem(invItem:getBodyLocation(), invItem);
+						end
 					end
 				end
 			else
@@ -113,7 +119,7 @@ function NPC:createIsoPlayer(square, preset)
 						end
 					end
 				else
-					print("ERROR IN NPC PRESET: ", element)
+					NPCPrint("NPC", "Error in NPC preset", element)
 				end 
 			end
 		end
@@ -133,7 +139,6 @@ function NPC:createIsoPlayer(square, preset)
 				end
 			end
 		else
-			print(element, " ITEM CREATE and ADD")
 			local invItem = instanceItem(element)
 			character:getInventory():AddItem(invItem)
 		end
@@ -161,7 +166,7 @@ function NPC:createIsoPlayer(square, preset)
 end
 
 function NPC:save()
-	print("SAVING")
+	NPCPrint("NPC", "Saving NPC", self.character:getDescriptor():getSurname(), self.UUID)
 
 	local filename = NPCUtils.getSaveDir() .. "NPC"..tostring(self.UUID);
 	self.character:getModData().actionContext_isSit = self.character:getActionStateName() == "sitonground"
@@ -190,6 +195,7 @@ function NPC:save()
 end
 
 function NPC:load(UUID, x, y, z, isRevive)
+	NPCPrint("NPC", "Load NPC", UUID)
 
 	if not x or not y or not z then
 		local p = getPlayer()
@@ -267,7 +273,12 @@ function NPC:loadAI(o)
 	}
 
 	if o.character:getModData().NPCTaskName ~= nil then
-		print("TaskName", o.character:getModData().NPCTaskName)
+		NPCPrint("NPC", "Load NPC last AI task", o.character:getModData().NPCTaskName, o.character:getDescriptor():getSurname(), o.UUID)
+
+		if o.character:getModData().NPCTaskName == "Talk" then
+			return
+		end
+
 		o.AI.command = taskTable[o.character:getModData().NPCTaskName].command
 		o.AI.TaskManager:addToTop(taskTable[o.character:getModData().NPCTaskName].task:new(o.character), o.character:getModData().NPCTaskScore)
 	end
@@ -714,10 +725,12 @@ function NPC:getItemsSquareInNearbyItems(evalFunc)
 	local count = 0
 	
 	for _, container in ipairs(ScanSquaresSystem.nearbyItems.containers) do
-		local items = container:getAllEvalRecurse(evalFunc)
-		if items:size() > 0 then
-			resultItemSquares[container:getSourceGrid()] = true
-			count = count + 1
+		if container ~= nil then
+			local items = container:getAllEvalRecurse(evalFunc)
+			if items:size() > 0 then
+				resultItemSquares[container:getSourceGrid()] = true
+				count = count + 1
+			end
 		end
 	end
 

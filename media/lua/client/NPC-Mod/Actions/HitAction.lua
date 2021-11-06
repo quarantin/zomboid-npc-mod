@@ -13,7 +13,7 @@ end
 local function dist(x, y, player)
     local dx = player:getX() - x
     local dy = player:getY() - y
-    local dist = math.sqrt( dx*dx + dy*dy )
+    local dist = math.sqrt(dx*dx + dy*dy)
     return dist
 end
 

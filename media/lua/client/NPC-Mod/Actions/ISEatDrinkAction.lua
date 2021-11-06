@@ -110,7 +110,7 @@ function ISEatDrinkAction:eat(food, percentage)
     self.character:Eat(self.item, percentage);
 end
 
-function ISEatDrinkAction:new (character, item, percentage)
+function ISEatDrinkAction:new(character, item, percentage)
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self

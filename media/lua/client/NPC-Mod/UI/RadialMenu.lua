@@ -35,9 +35,9 @@ function NPCRadialMenu:showRadialMenu()
 
 	menu:addSlice("Show moodles", getTexture("media/textures/Moodle_Icon_Angry.png"), function() NPCManager.moodlesTimer = 300 end)
 
-	menu:addSlice("Group Tasks", nil, NPCRadialMenu.groupTasks, playerObj)
+	menu:addSlice("Group Tasks", getTexture("media/textures/NPC_group.png"), NPCRadialMenu.groupTasks, playerObj)
 
-	menu:addSlice("Choose sector...", nil, NPCRadialMenu.chooseSector, playerObj)
+	menu:addSlice("Choose sector...", getTexture("media/textures/NPC_chooseSector.png"), NPCRadialMenu.chooseSector, playerObj)
 
 	
     menu:addToUIManager()
@@ -76,13 +76,13 @@ function NPCRadialMenu.chooseSector(playerObj)
 	local menu = getPlayerRadialMenu(playerIndex)
 	menu:clear()
 
-	menu:addSlice("Choose base", nil, function()
+	menu:addSlice("Choose base", getTexture("media/textures/NPC_base.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isBaseChoose = true
 	end)
 
-	menu:addSlice("Choose drop loot sectors...", nil, NPCRadialMenu.chooseSecotorsDropLoot, playerObj)
+	menu:addSlice("Choose drop loot sectors...", getTexture("media/textures/NPC_drop.png"), NPCRadialMenu.chooseSecotorsDropLoot, playerObj)
 
 	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
 	menu:setY(getPlayerScreenTop(playerIndex) + getPlayerScreenHeight(playerIndex) / 2 - menu:getHeight() / 2)
@@ -99,49 +99,49 @@ function NPCRadialMenu.chooseSecotorsDropLoot(playerObj)
 	local menu = getPlayerRadialMenu(playerIndex)
 	menu:clear()
 
-	menu:addSlice("Food", nil, function()
+	menu:addSlice("Food", getTexture("media/textures/NPC_food_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
 		NPCManager.isDropLootType = "FOOD"
 	end)
 
-	menu:addSlice("Weapon", nil, function()
+	menu:addSlice("Weapon", getTexture("media/textures/NPC_Guns_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
 		NPCManager.isDropLootType = "WEAPON"
 	end)
 
-	menu:addSlice("Clothing", nil, function()
+	menu:addSlice("Clothing", getTexture("media/textures/NPC_clothing_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
 		NPCManager.isDropLootType = "CLOTHING"
 	end)
 
-	menu:addSlice("Meds", nil, function()
+	menu:addSlice("Meds", getTexture("media/textures/NPC_MedsIcon_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
 		NPCManager.isDropLootType = "MEDS"
 	end)
 
-	menu:addSlice("Bags", nil, function()
+	menu:addSlice("Bags", getTexture("media/textures/NPC_BagIcon_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
 		NPCManager.isDropLootType = "BAGS"
 	end)
 
-	menu:addSlice("Melee", nil, function()
+	menu:addSlice("Melee", getTexture("media/textures/NPC_KnifeIcon_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
 		NPCManager.isDropLootType = "MELEE"
 	end)
 
-	menu:addSlice("Literature", nil, function()
+	menu:addSlice("Literature", getTexture("media/textures/NPC_BooksIcon_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
@@ -164,9 +164,9 @@ function NPCRadialMenu.chooseCharacter(playerObj, npc)
 	menu:clear()
 
 	if npc.AI:getType() == "AutonomousAI" then
-		menu:addSlice("TEST - Improve reputation", nil, NPCRadialMenu.improveReputation, npc)
+		--menu:addSlice("TEST - Improve reputation", nil, NPCRadialMenu.improveReputation, npc)
 
-		menu:addSlice("Invite to team", nil, NPCRadialMenu.inviteToTeam, npc)
+		menu:addSlice("Invite to team", getTexture("media/textures/NPC_Invite.png"), NPCRadialMenu.inviteToTeam, npc)
 	else	
 		menu:addSlice("Info", getTexture("media/textures/NPC_info.png"), NPCRadialMenu.characterInfo, npc)
 	
@@ -176,7 +176,7 @@ function NPCRadialMenu.chooseCharacter(playerObj, npc)
 	
 		menu:addSlice("NPC settings", getTexture("media/textures/NPC_settings.png"), NPCRadialMenu.npcSettings, playerObj, npc)
 	
-		menu:addSlice("Teleport to me", nil, NPCRadialMenu.teleportToMe, npc)
+		menu:addSlice("Teleport to me", getTexture("media/textures/NPC_teleport.png"), NPCRadialMenu.teleportToMe, npc)
 	end
 
 	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
@@ -318,9 +318,9 @@ function NPCRadialMenu.npcTasks(playerObj, npc)
 	menu:addSlice("Sit", getTexture("media/textures/NPC_Sit.png"), NPCRadialMenu.Sit, npc)	
 	menu:addSlice("Call", getTexture("media/textures/NPC_Call.png"), NPCRadialMenu.Call, npc)
 	
-	menu:addSlice("Talk", nil, NPCRadialMenu.Talk, npc)
+	menu:addSlice("Talk", getTexture("media/textures/NPC_Talk.png"), NPCRadialMenu.Talk, npc)
 
-	menu:addSlice("Drop loot", nil, NPCRadialMenu.dropLoot, npc)
+	menu:addSlice("Drop loot", getTexture("media/textures/NPC_drop.png"), NPCRadialMenu.dropLoot, npc)
 
 	-- WASH
 	local washYourself = ISWashYourself.GetRequiredWater(npc.character) > 0
@@ -698,8 +698,8 @@ function NPCRadialMenu.findItemsWhere(playerObj, npc, isGroupTask)
 	local menu = getPlayerRadialMenu(playerIndex)
 	menu:clear()
 
-	menu:addSlice("Near me", nil, NPCRadialMenu.findItemsDo, npc, "NEAR", isGroupTask)
-	menu:addSlice("In area", nil, NPCRadialMenu.findItemsDo, npc, "IN_AREA", isGroupTask)
+	menu:addSlice("Near me", getTexture("media/textures/NPC_near.png"), NPCRadialMenu.findItemsDo, npc, "NEAR", isGroupTask)
+	menu:addSlice("In area", getTexture("media/textures/NPC_InArea.png"), NPCRadialMenu.findItemsDo, npc, "IN_AREA", isGroupTask)
 
 	menu:setX(getPlayerScreenLeft(playerIndex) + getPlayerScreenWidth(playerIndex) / 2 - menu:getWidth() / 2)
 	menu:setY(getPlayerScreenTop(playerIndex) + getPlayerScreenHeight(playerIndex) / 2 - menu:getHeight() / 2)
@@ -730,7 +730,7 @@ function NPCRadialMenu.findItemsDo(npc, where, isGroupTask)
 		end
 	else
 		npc.AI.command = "FIND_ITEMS"
-		if npc.AI.TaskArgs == nil then
+		if type(npc.AI.TaskArgs) ~= "table" then
 			npc.AI.TaskArgs = {}
 		end
 		npc.AI.TaskArgs.FIND_ITEMS_WHERE = where

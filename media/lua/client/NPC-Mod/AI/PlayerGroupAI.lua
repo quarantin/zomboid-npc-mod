@@ -11,7 +11,7 @@ function PlayerGroupAI:new(character)
     o.TaskManager = TaskManager:new(character)
 
     o.TaskArgs = {}
-    o.command = ""
+    o.command = nil
     o.idleCommand = nil
 
     o.staySquare = nil
@@ -303,7 +303,7 @@ function PlayerGroupAI:calcImportantCat()
 
     self.IP.isCanHeal = 0
     if self.IP.needToHeal > 0 then
-        self.IP.isCanHeal = self.IPF_isCanHeal()
+        self.IP.isCanHeal = 1
     end
 
     local firstAid = {}
@@ -505,7 +505,7 @@ function PlayerGroupAI:chooseTask()
 
     if self.TaskManager:getCurrentTaskScore() <= score and task ~= nil and task ~= self.TaskManager:getCurrentTaskName() then
         ISTimedActionQueue.clear(self.character)
-        print("NEW CURRENT TASK ", task)
+        NPCPrint("AI", "New current task", task, self.character:getModData().NPC.UUID, self.character:getDescriptor():getSurname()) 
         self.TaskManager:addToTop(taskPoints[task]:new(self.character), score)
     end
 end
@@ -579,36 +579,4 @@ function PlayerGroupAI:hitPlayer(wielder, weapon, damage)
     end
 
     bodydamage:Update();
-end
-
------------------------
------------------------
-
-
-function PlayerGroupAI.IPF_isHaveItemsToHeal()
-    return false
-end
-
-function PlayerGroupAI.IPF_getItemsToHealNear()
-    return {}
-end
-
-function PlayerGroupAI.IPF_isNeedBandage()
-    return false
-end
-
-function PlayerGroupAI.IPF_isHaveFreeClothingInInv()
-    return true
-end
-
-function PlayerGroupAI.IPF_getClothingNear()
-    return {}
-end
-
-function PlayerGroupAI.IPF_isHaveClothingOnToRip()
-    return true
-end
-
-function PlayerGroupAI.IPF_isCanHeal()
-    return 1
 end

@@ -102,7 +102,7 @@ function EatDrinkTask:update()
         else
             local waterSource = self:getNearestWaterSource()
 
-            if waterSource and self.character:getModData()["NPC"]:isOkDist(waterSource) then
+            if waterSource and waterSource:getSquare() and self.character:getModData()["NPC"]:isOkDist(waterSource) then
                 ISTimedActionQueue.add(NPCWalkToAction:new(self.character, NPCUtils.getNearestFreeSquare(self.character, waterSource:getSquare(), NPCUtils.isInRoom(waterSource:getSquare())), false))
                 local waterAvailable = waterSource:getWaterAmount()
                 local thirst = self.character:getStats():getThirst()
@@ -226,7 +226,7 @@ function EatDrinkTask:getNearestWaterSource()
 
     for i, source in ipairs(ScanSquaresSystem.nearbyItems.clearWaterSources) do
         local d = NPCUtils.getDistanceBetween(source:getSquare(), self.character)
-        if d < dist then
+        if d < dist and source:getSquare() ~= nil then
             dist = d
             sourceRes = source
         end

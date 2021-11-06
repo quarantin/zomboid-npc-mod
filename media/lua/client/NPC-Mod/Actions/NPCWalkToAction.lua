@@ -28,7 +28,8 @@ function NPCWalkToAction:update()
 
         if nearestDoor and (nearestDoor:isLocked() or nearestDoor:isBarricaded()) then
             if window then
-                local sq = self:getSameOutsideSquare(self.character, window:getSquare(), window:getOppositeSquare()) -- TODO CAN BE ERROR
+                local sq = self:getSameOutsideSquare(self.character, window:getSquare(), window:getOppositeSquare())
+                if sq == nil then return false end
                 self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ())
 
                 if window:isPermaLocked() or window:isLocked() then
@@ -116,7 +117,8 @@ function NPCWalkToAction:start()
 
         if door and not door:isLocked() and not door:isLockedByKey() then
             if self.withOptimisation then
-                local sq = self:getSameOutsideSquare(self.character, door:getSquare(), door:getOppositeSquare())    -- TODO CAN BE ERROR
+                local sq = self:getSameOutsideSquare(self.character, door:getSquare(), door:getOppositeSquare())
+                if sq == nil then return false end
                 self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ());
                 ISTimedActionQueue.addAfter(self, NPCWalkToAction:new(self.character, self.location, self.isRun, false))
 
@@ -126,7 +128,8 @@ function NPCWalkToAction:start()
             end
         elseif window then
             if self.withOptimisation then
-                local sq = self:getSameOutsideSquare(self.character, window:getSquare(), window:getOppositeSquare())    -- TODO CAN BE ERROR
+                local sq = self:getSameOutsideSquare(self.character, window:getSquare(), window:getOppositeSquare())
+                if sq == nil then return false end
                 self.character:getPathFindBehavior2():pathToLocation(sq:getX(), sq:getY(), sq:getZ());
                 
                 if window:isPermaLocked() or window:isLocked() then
@@ -301,7 +304,7 @@ function NPCWalkToAction:getNearestWindowWithBuildingID(x, y, z, id)
 			local sq = getSquare(x + i, y + j, z)
 			if sq and sq:getWindow() ~= nil and not sq:getWindow():isBarricaded() then
                 local win = sq:getWindow()
-                if (win:getSquare():getBuilding() and win:getSquare():getBuilding():getID() == id and win:getOppositeSquare():isOutside()) or (win:getOppositeSquare():getBuilding() and win:getOppositeSquare():getBuilding():getID() == id and win:getSquare():isOutside()) then
+                if (win:getSquare() and win:getSquare():getBuilding() and win:getSquare():getBuilding():getID() == id and win:getOppositeSquare() and win:getOppositeSquare():isOutside()) or (win:getOppositeSquare() and win:getOppositeSquare():getBuilding() and win:getOppositeSquare():getBuilding():getID() == id and win:getSquare() and win:getSquare():isOutside()) then
                     local d = NPCUtils.getDistanceBetween(sq, getSquare(x, y, z))
                     if win:isLocked() or win:isPermaLocked() then
                         if d < distToLocked then
@@ -332,7 +335,7 @@ function NPCWalkToAction:getNearestDoorWithBuildingID(x, y, z, id)
 			local sq = getSquare(x + i, y + j, z)
 			if sq and NPCUtils:getDoor(sq) ~= nil and not NPCUtils:getDoor(sq):isBarricaded() then
                 local door = NPCUtils:getDoor(sq)
-                if (door:getSquare():getBuilding() and door:getSquare():getBuilding():getID() == id and door:getOppositeSquare():isOutside()) or (door:getOppositeSquare():getBuilding() and door:getOppositeSquare():getBuilding():getID() == id and door:getSquare():isOutside()) then
+                if (door:getSquare() and  door:getSquare():getBuilding() and door:getSquare():getBuilding():getID() == id and door:getOppositeSquare() and door:getOppositeSquare():isOutside()) or (door:getOppositeSquare() and door:getOppositeSquare():getBuilding() and door:getOppositeSquare():getBuilding():getID() == id and door:getSquare() and door:getSquare():isOutside()) then
                     local d = NPCUtils.getDistanceBetween(sq, getSquare(x, y, z))
                     if door:isLocked() or door:isLockedByKey() then
                         if d < distToLocked then

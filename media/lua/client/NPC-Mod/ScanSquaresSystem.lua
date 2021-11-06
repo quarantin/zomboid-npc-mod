@@ -169,6 +169,7 @@ function ScanSquaresSystem.onTickUpdate()
             end
         end
 
+        NPCPrint("ScanSquaresSystem", "Clear scan sectors")
     else
         ScanSquaresSystem.timer = ScanSquaresSystem.timer - 1
     end

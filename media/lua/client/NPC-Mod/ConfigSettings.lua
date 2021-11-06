@@ -362,7 +362,7 @@ NPCConfig.modId = "NPC-Mod" -- needs to the same as in your mod.info
 NPCConfig.name = "NPC Settings" -- the name that will be shown in the MOD tab
 NPCConfig.menu = {}
 
-NPCConfig.menu["NPC_NUM"] = {type = "Combobox", title = "NPC number", options = {{"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}, {"6", 6}, {"7", 7}, {"8", 8}, {"9", 9}, {"10", 10}, {"11", 11}, {"12", 12}} }
+NPCConfig.menu["NPC_NUM"] = {type = "Combobox", title = "NPC number", options = {{"0", 0},  {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}, {"6", 6}, {"7", 7}, {"8", 8}, {"9", 9}, {"10", 10}, {"11", 11}, {"12", 12}} }
 NPCConfig.menu["NPC_NEED_FOOD"] = {type = "Tickbox", title = "NPC need food"}
 NPCConfig.menu["NPC_NEED_AMMO"] = {type = "Tickbox", title = "NPC need ammo"}
 NPCConfig.menu["NPC_CAN_INFECT"] = {type = "Tickbox", title = "NPC can get zombie infection"}

@@ -1,5 +1,7 @@
 require "NPC-Mod/NPCGroupManager"
 
+local BUILD_VERSION = "v.0.1.12"
+
 NPCManager = {}
 NPCManager.characters = {}
 NPCManager.vehicleSeatChoose = {}
@@ -8,7 +10,7 @@ NPCManager.openInventoryNPC = nil
 NPCManager.moodlesTimer = 0
 NPCManager.characterMap = nil
 NPCManager.deadNPCList = {}
-NPCManager.loadedNPC = 0
+NPCManager.NPCInRadius = 0
 NPCManager.spawnON = false
 NPCManager.isSaveLoadUpdateOn = false
 
@@ -18,7 +20,6 @@ NPCManager.sector = nil
 function NPCManager:OnTickUpdate()
     if getPlayer():isDead() then return end
 
-    NPCManager.loadedNPC = 0
     for i, char in ipairs(NPCManager.characters) do
         char:update()
 
@@ -49,19 +50,17 @@ function NPCManager:OnTickUpdate()
             end
             return
         end
-        NPCManager.loadedNPC = NPCManager.loadedNPC + 1 
         ---
         
     end
-
-    NPCInsp("NPC", "NUM", NPCManager.loadedNPC)    
+    --NPCPrint("NPCManager", "FPS:", getAverageFPS())  
+    NPCInsp("NPC", "NPC count", NPCManager.NPCInRadius)
 
     if getPlayer():getSquare() ~= NPCManager.lastSaveSquare then
         NPCManager.isSaveLoadUpdateOn = true
     end
 end
 Events.OnTick.Add(NPCManager.OnTickUpdate)
-
 
 local refreshBackpackTimer = 0
 function NPCManager:InventoryUpdate()
@@ -312,11 +311,11 @@ end
 Events.OnTick.Add(NPCManager.updateZombieDangerSectors)
 
 function NPCManager.LoadGrid(square)
-    if NPCManager.spawnON and square:getZ() == 0 and square:getZoneType() == "TownZone" and not square:isSolid() and square:isFree(false) and ZombRand(1200) == 0 and NPCManager.loadedNPC < NPCConfig.config["NPC_NUM"] then
+    if NPCManager.spawnON and square:getZ() == 0 and square:getZoneType() == "TownZone" and not square:isSolid() and square:isFree(false) and ZombRand(5000) == 0 and NPCManager.NPCInRadius < NPCConfig.config["NPC_NUM"] then
         local npc = NPC:new(square, NPCPresets_GetPreset(NPCPresets))
         npc:setAI(AutonomousAI:new(npc.character))
 
-        NPCManager.loadedNPC = NPCManager.loadedNPC + 1
+        NPCManager.NPCInRadius = NPCManager.NPCInRadius + 1
     end
 end
 Events.LoadGridsquare.Add(NPCManager.LoadGrid)
@@ -402,7 +401,7 @@ end
 Events.OnLoad.Add(NPCManager.OnLoad)
 
 function NPCManager.OnGameStart()
-    NPCPrint("NPCManager", "OnGameStart", "v.0.1.11")
+    NPCPrint("NPCManager", "OnGameStart", BUILD_VERSION)
 
     for charID, value in pairs(NPCManager.characterMap) do
         value.isLoaded = false
@@ -437,5 +436,28 @@ function NPCManager.LoadGlobalModData()
 
     MeetSystem.Data = ModData.getOrCreate("MeetSystemData")
 end
-
 Events.OnInitGlobalModData.Add(NPCManager.LoadGlobalModData)
+
+local countInRadiusNPCTimer = 0
+function NPCManager.CountNPCInRadius()
+    if countInRadiusNPCTimer <= 0 then
+        countInRadiusNPCTimer = 60
+        NPCManager.NPCInRadius = 0
+        local x = getPlayer():getX()
+        local y = getPlayer():getY()
+        for _, value in pairs(NPCManager.characterMap) do
+            if value.isLoaded then
+                if NPCUtils.getDistanceBetweenXYZ(value.npc.character:getX(), value.npc.character:getY(), x, y) < 120 then
+                    NPCManager.NPCInRadius = NPCManager.NPCInRadius + 1
+                end 
+            else
+                if NPCUtils.getDistanceBetweenXYZ(value.x, value.y, x, y) < 120 then
+                    NPCManager.NPCInRadius = NPCManager.NPCInRadius + 1
+                end
+            end
+        end
+    else
+        countInRadiusNPCTimer = countInRadiusNPCTimer - 1
+    end
+end
+Events.OnTick.Add(NPCManager.CountNPCInRadius)

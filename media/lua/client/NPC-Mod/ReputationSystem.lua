@@ -33,7 +33,15 @@ function ReputationSystem:getNPCRep(npc)
                 end
             end
         else
-            return NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID)].npc.reputationSystem:getNPCRep(npc)
+            if NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID)] == nil or NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID)].isLoaded == false then
+                if self.reputationList[npc.ID] == nil then
+                    return self.defaultReputation
+                else
+                    return self.reputationList[npc.ID]
+                end
+            else
+                return NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(self.character:getModData().NPC.groupID)].npc.reputationSystem:getNPCRep(npc)
+            end
         end
     else
         if npc.AI:getType() == "PlayerGroupAI" and self.character:getModData().NPC.AI:getType() == "PlayerGroupAI" then

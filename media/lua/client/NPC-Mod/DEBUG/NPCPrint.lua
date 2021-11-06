@@ -4,7 +4,8 @@ local categoryMode = {
     ["NPC"] = true,
     ["NPCManager"] = true,
     ["NPCWalkToAction"] = true,
-    ["AI"] = true
+    ["AI"] = true,
+    ["ScanSquaresSystem"] = true
 }
 
 

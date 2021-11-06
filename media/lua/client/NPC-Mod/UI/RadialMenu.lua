@@ -212,19 +212,14 @@ function NPCRadialMenu.inviteToTeam(npc)
 				npc:setAI(PlayerGroupAI:new(npc.character)) 	
 				npc.reputationSystem.playerRep = 600
 			else
-				NPCGroupManager.Groups[npc.groupID].count = NPCGroupManager.Groups[npc.groupID].count - 1
-
-				local cc = 0
-				for ii, v in ipairs(NPCGroupManager.Groups[npc.groupID].npc) do
-					if v == npc then
-						cc = ii
-					end
-				end
-				table.remove(NPCGroupManager.Groups[npc.groupID].npc, cc)
-				if npc.isLeader then
-					NPCManager.characterMap[NPCGroupManager.Groups[npc.groupID].npc[1]].isLeader = true
-					NPCGroupManager.Groups[npc.groupID].leader = NPCGroupManager.Groups[npc.groupID].npc[1]
-				end
+				table.remove(NPCGroupManager.Groups[npc.groupID].npc, tablefind(NPCGroupManager.Groups[npc.groupID].npc, npc.UUID))
+                NPCGroupManager.Groups[npc.groupID].count = NPCGroupManager.Groups[npc.groupID].count - 1
+                if NPCGroupManager.Groups[npc.groupID].count <= 0 then
+                    NPCGroupManager.Groups[npc.groupID] = nil
+                else
+                    NPCGroupManager.Groups[npc.groupID].leader = NPCGroupManager.Groups[npc.groupID].npc[1]
+                    NPCManager.characterMap[NPCGroupManager.Groups[npc.groupID].leader].npc.isLeader = true
+                end
 
 				npc.userName:removeGroupText()
 

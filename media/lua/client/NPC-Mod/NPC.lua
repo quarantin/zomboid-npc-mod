@@ -23,8 +23,6 @@ function NPC:new(square, preset)
 	
 	NPCPrint("NPC", "Create new NPC", o.character:getDescriptor():getSurname(), o.UUID)
 	---
-	IsoPlayer.setCoopPVP(true)
-	---
 	o.saveTimer = 1800
 	o.walkToDelay = 0
 
@@ -33,6 +31,7 @@ function NPC:new(square, preset)
 	---
 	o.groupID = nil
 	o.isLeader = false
+	o.groupCharacteristic = preset.groupCharacteristic
 	---
 
 	o:save()

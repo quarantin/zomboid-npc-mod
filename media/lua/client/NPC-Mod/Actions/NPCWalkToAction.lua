@@ -104,6 +104,16 @@ function NPCWalkToAction:update()
         self.character:getModData().NPC.lastWalkActionFailed = true
         self:forceStop()
     end    
+
+    -- Close doors
+    if(self.character:getLastSquare() ~= nil ) then
+        local cs = self.character:getCurrentSquare()
+        local ls = self.character:getLastSquare()
+        local tempdoor = ls:getDoorTo(cs);
+        if(tempdoor ~= nil and tempdoor:IsOpen()) then
+            tempdoor:ToggleDoor(self.character);
+        end		
+    end
 end
 
 function NPCWalkToAction:start()

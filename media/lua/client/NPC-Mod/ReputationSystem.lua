@@ -14,9 +14,11 @@ function ReputationSystem:new(character, preset)
     if preset ~= nil then
         o.playerRep = preset.defaultReputation
         o.defaultReputation = preset.defaultReputation
+    else
+        o.playerRep = 0
+        o.defaultReputation = 0
     end
     
-
     return o
 end
 
@@ -73,6 +75,10 @@ function ReputationSystem:getPlayerRep()
             return self.playerRep
         end
     end
+end
+
+function ReputationSystem:updatePlayerRep(value)
+    self.playerRep = self.playerRep + value
 end
 
 

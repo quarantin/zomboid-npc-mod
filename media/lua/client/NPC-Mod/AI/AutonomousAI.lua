@@ -327,6 +327,14 @@ function AutonomousAI:calcImportantCat()
 end
 
 function AutonomousAI:calcNPCTaskCat()
+    local take_items_from_player = {}
+    take_items_from_player.name = "TakeItemsFromPlayer"
+    take_items_from_player.score = 0
+    if self.command == "TAKE_ITEMS_FROM_PLAYER" then
+        take_items_from_player.score = 25
+    end
+
+
     local find_items = {}
     find_items.name = "FindItems"
     find_items.score = 0
@@ -365,7 +373,7 @@ function AutonomousAI:calcNPCTaskCat()
         talk.score = 20
     end
     
-    return getMaxTaskName(find_items, goToInterestPoint, followLeader, talk)
+    return getMaxTaskName(find_items, goToInterestPoint, followLeader, talk, take_items_from_player)
 end
 
 function AutonomousAI:calcCommonTaskCat()
@@ -417,6 +425,7 @@ function AutonomousAI:chooseTask()
     taskPoints["Smoke"] = SmokeTask
     taskPoints["GoToInterestPoint"] = GoToInterestPointTask
     taskPoints["Talk"] = TalkTask
+    taskPoints["TakeItemsFromPlayer"] = TakeItemsFromPlayerTask
 
     -- Each category task have more priority than next (surrender > danger > important > ...)
     local task = nil

@@ -1,6 +1,6 @@
 require "NPC-Mod/NPCGroupManager"
 
-local BUILD_VERSION = "v.0.1.12"
+local BUILD_VERSION = "v.0.1.13"
 
 NPCManager = {}
 NPCManager.characters = {}
@@ -16,6 +16,9 @@ NPCManager.isSaveLoadUpdateOn = false
 
 NPCManager.chooseSector = false
 NPCManager.sector = nil
+
+NPCManager.pvpTurnOffTimer = 0
+NPCManager.pvpTurnedOn = false
 
 function NPCManager:OnTickUpdate()
     if getPlayer():isDead() then return end
@@ -59,6 +62,15 @@ function NPCManager:OnTickUpdate()
     if getPlayer():getSquare() ~= NPCManager.lastSaveSquare then
         NPCManager.isSaveLoadUpdateOn = true
     end
+
+    ---
+    if NPCManager.pvpTurnOffTimer <= 0 then
+        if IsoPlayer.getCoopPVP() and not NPCManager.pvpTurnedOn then
+            IsoPlayer.setCoopPVP(false)
+        end
+    else
+        NPCManager.pvpTurnOffTimer = NPCManager.pvpTurnOffTimer - 1
+    end
 end
 Events.OnTick.Add(NPCManager.OnTickUpdate)
 
@@ -89,6 +101,16 @@ NPCManager.hitPlayer = function(wielder, victim, weapon, damage)
             return
         else
             victim:getModData()["NPC"]:hitPlayer(wielder, weapon, damage)
+            victim:getModData()["NPC"].reputationSystem:updatePlayerRep(-200)
+            victim:getModData()["NPC"]:SayNote("Reputation [img=media/ui/ArrowDown.png]", NPCColor.Red)
+
+            if victim:getModData()["NPC"].groupID ~= nil then
+                if NPCManager.characterMap[NPCGroupManager.Groups[ victim:getModData()["NPC"].groupID].leader] and NPCManager.characterMap[NPCGroupManager.Groups[ victim:getModData()["NPC"].groupID].leader].isLoaded then
+                    local npc =  NPCManager.characterMap[NPCGroupManager.Groups[ victim:getModData()["NPC"].groupID].leader].npc
+                    npc.reputationSystem:updatePlayerRep(-50)
+                    npc:getModData()["NPC"]:SayNote("Reputation [img=media/ui/ArrowDown.png]", NPCColor.Red)
+                end
+            end
 
             if ZombRand(0, 4) == 0 then
                 if victim:getModData().NPC.reputationSystem.defaultReputation < 0 then
@@ -114,6 +136,26 @@ NPCManager.hitPlayer = function(wielder, victim, weapon, damage)
 	end
 end
 Events.OnWeaponHitCharacter.Add(NPCManager.hitPlayer)
+
+local lastHittedZombie = nil
+NPCManager.hitZombie = function(wielder, victim, weapon, damage)
+    if instanceof(victim, "IsoZombie") and wielder == getPlayer() then
+        lastHittedZombie = victim
+    end
+end
+Events.OnWeaponHitCharacter.Add(NPCManager.hitZombie)
+
+NPCManager.killZombie = function(zombie)
+    if zombie == lastHittedZombie then
+        for i, char in ipairs(NPCManager.characters) do
+            if NPCUtils.getDistanceBetween(char.character, getPlayer()) < 10 then
+                char.reputationSystem:updatePlayerRep(5)
+                char:SayNote("Reputation [img=media/ui/ArrowUp.png]", NPCColor.Green)
+            end
+        end    
+    end
+end
+Events.OnZombieDead.Add(NPCManager.killZombie)
 
 NPCManager.onEnterVehicle = function(player)
     if player == getPlayer() then
@@ -402,6 +444,8 @@ Events.OnLoad.Add(NPCManager.OnLoad)
 
 function NPCManager.OnGameStart()
     NPCPrint("NPCManager", "OnGameStart", BUILD_VERSION)
+
+    IsoPlayer.setCoopPVP(false)
 
     for charID, value in pairs(NPCManager.characterMap) do
         value.isLoaded = false

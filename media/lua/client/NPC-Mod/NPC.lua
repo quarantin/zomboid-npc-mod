@@ -29,9 +29,11 @@ function NPC:new(square, preset)
 	o.visitedRooms = {}
 
 	---
-	o.groupID = nil
-	o.isLeader = false
 	o.groupCharacteristic = preset.groupCharacteristic
+	o.isRaider = preset.isRaider
+	if o.isRaider then
+		o.userName:setRaiderNickname()
+	end
 	---
 
 	o:save()
@@ -370,8 +372,16 @@ end
 function NPC:doVision()
 	local objects = self.character:getCell():getObjectList()
 	self.seeEnemyCount = 0
+
+	if self.nearestEnemy ~= nil and (self.nearestEnemy:isDead() or NPCUtils.getDistanceBetween(self.character, self.nearestEnemy) > 15) then
+		self.nearestEnemy = nil
+	end
+
 	local nearestDist = 100000
-	self.nearestEnemy = nil
+	if self.nearestEnemy ~= nil then
+		nearestDist = NPCUtils.getDistanceBetween(self.character, self.nearestEnemy)
+	end
+	
 	self.isNearTooManyZombies = false
 	local nearZombiesCount = 0
 	self.isZombieAtFront = false
@@ -421,6 +431,7 @@ function NPC:doVision()
 
 	if nearZombiesCount > 2 then
 		self.isNearTooManyZombies = true
+		self.nearestEnemy = nil
 	end
 end
 

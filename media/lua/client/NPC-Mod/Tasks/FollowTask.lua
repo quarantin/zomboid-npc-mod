@@ -9,7 +9,7 @@ function FollowTask:new(character)
 	self.__index = self
 		
     if character:getModData().NPC.AI:getType() == "AutonomousAI" then
-        o.followCharacter = NPCManager.characterMap[NPCGroupManager:getLeaderOfGroup(character:getModData().NPC.groupID)].npc.character
+        o.followCharacter = NPCManager.characterMap[NPCGroupManager:getLeaderID(NPCGroupManager:getGroupID(character:getModData().NPC.UUID))].npc.character
     else
         o.followCharacter = getPlayer()
     end

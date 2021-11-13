@@ -119,7 +119,7 @@ function NPCRadialMenu.chooseSecotorsDropLoot(playerObj)
 		NPCManager.isDropLootType = "FOOD"
 	end)
 
-	menu:addSlice("Weapon", getTexture("media/textures/NPC_Guns_ON.png"), function()
+	menu:addSlice("Firearm", getTexture("media/textures/NPC_Guns_ON.png"), function()
 		NPCManager.chooseSector = true 
 		NPCManager.sector = nil
 		NPCManager.isDropLootChoose = true
@@ -476,9 +476,9 @@ function NPCRadialMenu.FindItemsMenu(playerObj, npc, isGroupTask)
 		end
 	
 		if settings.Weapon then
-			menu:addSlice("Weapon", getTexture("media/textures/NPC_Guns_ON.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, false, isGroupTask, settings)	
+			menu:addSlice("Firearm", getTexture("media/textures/NPC_Guns_ON.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, false, isGroupTask, settings)	
 		else
-			menu:addSlice("Weapon", getTexture("media/textures/NPC_Guns_OFF.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, true, isGroupTask, settings)
+			menu:addSlice("Firearm", getTexture("media/textures/NPC_Guns_OFF.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, true, isGroupTask, settings)
 		end
 	
 		if settings.Clothing then
@@ -522,9 +522,9 @@ function NPCRadialMenu.FindItemsMenu(playerObj, npc, isGroupTask)
 		end
 	
 		if npc.AI.findItems.Weapon then
-			menu:addSlice("Weapon", getTexture("media/textures/NPC_Guns_ON.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, false)	
+			menu:addSlice("Firearm", getTexture("media/textures/NPC_Guns_ON.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, false)	
 		else
-			menu:addSlice("Weapon", getTexture("media/textures/NPC_Guns_OFF.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, true)
+			menu:addSlice("Firearm", getTexture("media/textures/NPC_Guns_OFF.png"), NPCRadialMenu.setFindWeapon, playerObj, npc, true)
 		end
 	
 		if npc.AI.findItems.Clothing then

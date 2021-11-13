@@ -16,12 +16,7 @@ function AttackTask:new(character)
 
     if ZombRand(0, 8) == 0 then
         character:getModData().NPC:Say(NPC_Dialogues.attackTalk[ZombRand(1, #NPC_Dialogues.attackTalk+1)], NPCColor.White)
-    end
-
-    if o.character:getModData().NPC.AI.nearestEnemy ~= nil and instanceof(o.character:getModData().NPC.AI.nearestEnemy, "IsoPlayer") then
-        IsoPlayer.setCoopPVP(true)    
-    end
-    NPCManager.pvpTurnOffTimer = 600
+    end    
 
 	return o
 end
@@ -63,6 +58,11 @@ function AttackTask:update()
     self.character:faceThisObject(self.character:getModData()["NPC"].nearestEnemy)
 
     local dist = NPCUtils.getDistanceBetween(self.character, self.character:getModData()["NPC"].nearestEnemy)
+
+    if self.character:getModData().NPC.nearestEnemy ~= nil and instanceof(self.character:getModData().NPC.nearestEnemy, "IsoPlayer") then
+        IsoPlayer.setCoopPVP(true)   
+        NPCManager.pvpTurnOffTimer = 120 
+    end
 
     if self.character:getModData()["NPC"]:isUsingGun() and self.character:getPrimaryHandItem() and self.character:getPrimaryHandItem():isAimedFirearm() then
         if self.character:getVehicle() ~= nil then

@@ -153,6 +153,7 @@ function AutonomousAI:UpdateInputParams()
     else
         p.isNearEnemy = 0
     end
+
     p.needReload = 0
     if currentWeapon and currentWeapon:isAimedFirearm() and currentWeapon:getCurrentAmmoCount() < currentWeapon:getMaxAmmo() and self.character:getModData()["NPC"]:haveAmmo() then
         p.needReload = 1 - currentWeapon:getCurrentAmmoCount()/currentWeapon:getMaxAmmo()
@@ -168,7 +169,7 @@ function AutonomousAI:UpdateInputParams()
                 p.isTooDangerous = 1
             elseif self.character:getPrimaryHandItem() == nil or self.character:getPrimaryHandItem() and not self.character:getPrimaryHandItem():isAimedFirearm() then
                 p.isTooDangerous = 1
-            end
+            end           
         end
     end    
     
@@ -177,7 +178,7 @@ function AutonomousAI:UpdateInputParams()
         p.isInSafeZone = 0
     end
 
-    if self.TaskManager:getCurrentTaskName() == "Flee" or self.TaskManager:getCurrentTaskName() == "StepBack" then
+    if self.TaskManager:getCurrentTaskName() == "Flee" then
         p.isRunFromDanger = 1               -- (1-yes, 0-no) // npc is flee from last danger
     else
         p.isRunFromDanger = 0
@@ -200,10 +201,10 @@ function AutonomousAI:UpdateInputParams()
     local newRoomID = NPC_InterestPointMap:getNearestNewRoom(self.character:getX(), self.character:getY(), self.character:getModData().NPC.visitedRooms)
 
     p.isLeader = 0
-    if self.character:getModData().NPC.groupID == nil then
+    if NPCGroupManager:getGroupID(self.character:getModData().NPC.UUID) == nil then
         p.isLeader = 1
     else
-        if self.character:getModData().NPC.isLeader then
+        if NPCGroupManager:isLeader(self.character:getModData().NPC.UUID) then
             p.isLeader = 1
         end
     end
@@ -217,9 +218,6 @@ function AutonomousAI:UpdateInputParams()
         end
     end
     
-
-
-
     --
     p.isTalkTime = 0
     if ZombRand(0, 50000) == 0 then
@@ -278,19 +276,15 @@ function AutonomousAI:calcDangerCat()
 
     local attack = {}
     attack.name = "Attack"
-    attack.score = self.IP.isAgressiveMode* self.IP.isNearEnemy * (1 - self.IP.isRunFromDanger) * self.IP.isGoodWeapon * (1 - self.IP.needReload) * (1 - self.IP.isTooDangerous)
-
-    --print("attack ", attack.score)
+    attack.score = self.IP.isAgressiveMode * self.IP.isNearEnemy * (1 - self.IP.isRunFromDanger) * self.IP.isGoodWeapon * (1 - self.IP.needReload) * (1 - self.IP.isTooDangerous)
 
     local flee = {}
     flee.name = "Flee"
     flee.score = self.IP.isNearEnemy *norm(self.IP.isRunFromDanger, self.IP.isTooDangerous, self.IP.needToHeal)
 
-    --print("flee ", flee.score)
-
     local stepBack = {}
     stepBack.name = "StepBack"
-    stepBack.score = self.IP.isNearEnemy*(1-self.IP.isInSafeZone)*self.IP.needReload*self.IP.isGoodWeapon * (1-flee.score)
+    stepBack.score = self.IP.isNearEnemy*(1-self.IP.isInSafeZone)* norm(self.IP.needReload*self.IP.isGoodWeapon, 1 - self.IP.isGoodWeapon) * (1-flee.score)
 
     local reload = {}
     reload.name = "ReloadWeapon"
@@ -354,17 +348,15 @@ function AutonomousAI:calcNPCTaskCat()
     talk.name = "Talk"
     talk.score = 0
 
-    if self.character:getModData().NPC.groupID ~= nil and self.character:getModData().NPC.AI.idleCommand ~= "TALK_COMPANION" and self.idleCommand == "TALK" then
-        local id = self.character:getModData().NPC.groupID
-        if NPCGroupManager.Groups[id].count > 1 then
-            for i, n in ipairs(NPCGroupManager.Groups[id].npc) do
-                if NPCManager.characterMap[n] ~= self.character:getModData().NPC then
-                    talk.score = 20
-                    self.TaskArgs = NPCManager.characterMap[n].character
+    if NPCGroupManager:getGroupID(self.character:getModData().NPC.UUID) ~= nil and self.character:getModData().NPC.AI.idleCommand ~= "TALK_COMPANION" and self.idleCommand == "TALK" then
+        local id = NPCGroupManager:getGroupID(self.character:getModData().NPC.UUID)
+        for i, n in ipairs(NPCGroupManager.Data.groups[id].npcIDs) do
+            if NPCManager.characterMap[n] and NPCManager.characterMap[n].npc ~= self.character:getModData().NPC then
+                talk.score = 20
+                self.TaskArgs = NPCManager.characterMap[n].character
 
-                    NPCManager.characterMap[n].AI.idleCommand = "TALK_COMPANION"
-                    NPCManager.characterMap[n].AI.TaskArgs = self.character
-                end
+                NPCManager.characterMap[n].AI.idleCommand = "TALK_COMPANION"
+                NPCManager.characterMap[n].AI.TaskArgs = self.character
             end
         end
     end
